@@ -109,6 +109,13 @@ func readWord(s string, i int) (Word, int) {
 				if s[i] == '$' || s[i] == '`' {
 					w.HasSubst = true
 				}
+				if s[i] == '$' && i+1 < len(s) && s[i+1] == '(' {
+					end := substEnd(s, i+1)
+					for ; i < end; i++ {
+						add(s[i], true)
+					}
+					continue
+				}
 				add(s[i], true)
 				i++
 			}
@@ -116,24 +123,9 @@ func readWord(s string, i int) (Word, int) {
 		case c == '$' || c == '`':
 			w.HasSubst = true
 			if c == '$' && i+1 < len(s) && (s[i+1] == '(' || s[i+1] == '{') {
-				// copy the balanced group as one unit
-				open, close := s[i+1], byte(')')
-				if open == '{' {
-					close = '}'
-				}
-				depth := 0
-				for i < len(s) {
+				end := substEnd(s, i+1)
+				for ; i < end; i++ {
 					add(s[i], true)
-					if s[i] == open {
-						depth++
-					} else if s[i] == close {
-						depth--
-						if depth == 0 {
-							i++
-							break
-						}
-					}
-					i++
 				}
 				continue
 			}
@@ -146,6 +138,41 @@ func readWord(s string, i int) (Word, int) {
 	}
 	w.End, w.Value = i, val.String()
 	return w, i
+}
+
+// substEnd returns the index after the group that opens at s[i] ('(' or '{'). Quotes inside the group
+// are skipped, so a ')' or '"' inside '...' does not end it.
+func substEnd(s string, i int) int {
+	open, close := s[i], byte(')')
+	if open == '{' {
+		close = '}'
+	}
+	depth := 0
+	for ; i < len(s); i++ {
+		switch c := s[i]; {
+		case c == '\\':
+			i++
+		case c == '\'':
+			for i++; i < len(s) && s[i] != '\''; i++ {
+			}
+		case c == '"':
+			for i++; i < len(s) && s[i] != '"'; i++ {
+				if s[i] == '\\' {
+					i++
+				} else if s[i] == '$' && i+1 < len(s) && s[i+1] == '(' {
+					i = substEnd(s, i+1) - 1
+				}
+			}
+		case c == open:
+			depth++
+		case c == close:
+			depth--
+			if depth == 0 {
+				return i + 1
+			}
+		}
+	}
+	return len(s)
 }
 
 func singleQuote(v string) string { return "'" + strings.ReplaceAll(v, "'", `'\''`) + "'" }

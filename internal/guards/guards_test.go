@@ -87,6 +87,21 @@ func TestZshGlob(t *testing.T) {
 			t.Errorf("%q must pass, got %+v", ok, f)
 		}
 	}
+	// Both were false warnings in live use: the glob is checked in the folder after `cd`, and quotes
+	// inside $(...) inside "..." must not end the string.
+	sub := filepath.Join(dir, "sub")
+	os.Mkdir(sub, 0o755)
+	os.WriteFile(filepath.Join(sub, "x.go"), nil, 0o644)
+	for _, ok := range []string{`cd sub; grep -n x *.go`, `cd ` + sub + ` && ls *.go`, `cd "$D"; ls *.go`,
+		`echo "$w: $(node -e 'console.log("a")')" ; ls *.md`} {
+		if f := find(Check(ok, e), "zsh_glob"); f != nil {
+			t.Errorf("%q must pass, got %+v", ok, f)
+		}
+	}
+	if find(Check(`cd sub; ls *.md`, e), "zsh_glob") == nil {
+		t.Error("cd sub; ls *.md: sub has no .md file, must warn")
+	}
+
 	r := &Env{Shell: "/bin/zsh", Replay: true}
 	if find(Check(`ls *.md`, r), "zsh_glob") == nil {
 		t.Error("replay assumes no match")

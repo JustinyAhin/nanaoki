@@ -162,7 +162,15 @@ func globPattern(w Word) string {
 // in the cwd: a glob that matches files is fine. Warn only (the files can change before the command runs).
 func zshGlob(src string, cmds []Command, e *Env) (Finding, bool) {
 	var bad []Word
+	cwd := e.Cwd
 	for _, c := range cmds {
+		if c.Words[0].Value == "cd" || c.Words[0].Value == "pushd" {
+			cwd = cdTarget(cwd, c)
+			continue
+		}
+		if cwd == "" && !e.Replay {
+			continue // after a cd we cannot follow, the cwd is unknown: do not guess
+		}
 		for i, w := range c.Words {
 			if i == 0 && (w.Value == "noglob" || w.Value == "[[" || w.Value == "[") {
 				break
@@ -182,7 +190,7 @@ func zshGlob(src string, cmds []Command, e *Env) (Finding, bool) {
 					home, _ := os.UserHomeDir()
 					p = filepath.Join(home, p[2:])
 				} else if !filepath.IsAbs(p) {
-					p = filepath.Join(e.Cwd, p)
+					p = filepath.Join(cwd, p)
 				}
 				if m, err := filepath.Glob(p); err == nil && len(m) > 0 {
 					continue
@@ -198,6 +206,34 @@ func zshGlob(src string, cmds []Command, e *Env) (Finding, bool) {
 		Message: "zsh fails with \"no matches found\" when an unquoted glob matches no file: `" + bad[0].Value +
 			"`. Quote words with [ ] * ? (URLs, [slug] routes, --include=*.md).",
 		Fixed: replaceSpans(src, bad, func(w Word) string { return singleQuote(w.Value) }), words: bad}, true
+}
+
+// cdTarget is the cwd after `cd DIR`, or "" when it cannot be known (cd -, a variable, a glob).
+func cdTarget(cwd string, c Command) string {
+	args := c.Words[1:]
+	for len(args) > 0 && strings.HasPrefix(args[0].Value, "-") && args[0].Value != "-" {
+		args = args[1:] // -P, -L
+	}
+	home, _ := os.UserHomeDir()
+	if len(args) == 0 {
+		return home
+	}
+	w := args[0]
+	if w.HasSubst || w.Value == "-" || globChars(w) {
+		return ""
+	}
+	d := w.Value
+	switch {
+	case d == "~":
+		return home
+	case strings.HasPrefix(d, "~/"):
+		return filepath.Join(home, d[2:])
+	case filepath.IsAbs(d):
+		return d
+	case cwd == "":
+		return ""
+	}
+	return filepath.Join(cwd, d)
 }
 
 var assignRx = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_]*=`)
