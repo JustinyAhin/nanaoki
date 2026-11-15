@@ -93,11 +93,12 @@ One tip: Claude Code deletes transcripts after 30 days by default. Set `"cleanup
 ## Stop the repeats (plugin)
 
 ```sh
-nanaoki lessons build   # build lessons from your history (run it once a day)
-claude --plugin-dir "$(go env GOPATH)/pkg/mod/github.com/!justiny!ahin/nanaoki@*/plugin/claude-code"
+nanaoki lessons build   # build lessons from your history
+nanaoki setup claude    # Claude Code plugin
+nanaoki setup codex     # Codex hooks and skills (then trust them in /hooks)
 ```
 
-Or clone this repo and use `claude --plugin-dir ./plugin/claude-code`. Codex hooks are in `plugin/codex/`. See [PLUGIN.md](PLUGIN.md).
+After that, the plugin refreshes the lessons once a day in the background. See [PLUGIN.md](PLUGIN.md).
 
 The plugin:
 
@@ -125,8 +126,8 @@ Prints lines for your `CLAUDE.md` / `AGENTS.md` based on what you restate across
 ## Privacy
 
 - Reads `~/.claude` and `~/.codex` (or `$CLAUDE_CONFIG_DIR`, `$CODEX_HOME`) read-only.
-- Writes only to `~/.local/share/nanaoki/`. Delete that folder to remove everything.
-- Makes no network calls. Sends nothing anywhere.
+- Writes only to `~/.local/share/nanaoki/`. Delete that folder to remove everything. `nanaoki setup` is the exception: it installs the plugin and the Codex hooks when you run it.
+- Makes no network calls. Sends nothing anywhere. (`nanaoki setup claude` asks the `claude` CLI to fetch the plugin from GitHub.)
 
 ## License
 

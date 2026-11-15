@@ -1,0 +1,14 @@
+{
+  "name": "nanaoki",
+  "owner": {
+    "name": "Justin Ahinon"
+  },
+  "description": "Lessons, guards and past-session search from your local agent history.",
+  "plugins": [
+    {
+      "name": "nanaoki",
+      "source": "./plugin/claude-code",
+      "description": "Lessons, guards and past-session search from your local agent history."
+    }
+  ]
+}

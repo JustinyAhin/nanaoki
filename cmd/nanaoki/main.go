@@ -27,6 +27,10 @@ Usage:
   nanaoki hook EVENT         hook handler for Claude Code and Codex (JSON on stdin; see PLUGIN.md)
   nanaoki search QUERY       full-text search over past sessions, with citations
   nanaoki rules suggest      propose rules for CLAUDE.md / AGENTS.md (print only)
+  nanaoki stats [--since 7d] what the plugin did: lessons, guards, noise, misses, hook health
+  nanaoki note "text"        save a note about a lesson or guard (--noise, --useful, --wrong, --missing)
+  nanaoki setup claude|codex install the plugin for Claude Code or the hooks for Codex
+  nanaoki refresh            ingest + lessons build (the SessionStart hook starts it once a day)
 
 Flags:
   --db PATH          event store (default ~/.local/share/nanaoki/events.db)
@@ -85,6 +89,14 @@ func run(args []string, stdout, stderr io.Writer) error {
 		return runSearch(args, stdout, stderr)
 	case "rules":
 		return runRules(args, stdout, stderr)
+	case "stats":
+		return runStats(args, stdout, stderr)
+	case "note":
+		return runNote(args, stdout, stderr)
+	case "setup":
+		return runSetup(args, stdout, stderr)
+	case "refresh":
+		return runRefresh(stdout, stderr)
 	case "", "ingest", "report":
 	case "help":
 		fmt.Fprint(stdout, usage)

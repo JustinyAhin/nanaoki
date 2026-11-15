@@ -1,6 +1,8 @@
 package analyze
 
 import (
+	"database/sql"
+
 	"sort"
 
 	"github.com/JustinyAhin/nanaoki/internal/rules"
@@ -213,4 +215,16 @@ func TrainTest(eps []*Episode) []Repeat {
 		}
 	}
 	return out
+}
+
+// History loads the store and returns the data (fixes marked, pastes the human did not type dropped), the
+// episodes and the rolling repeat-after-fix rows, as the report computes them.
+func History(db *sql.DB) (*Data, []Repeat, error) {
+	d, err := Load(db, "")
+	if err != nil {
+		return nil, nil, err
+	}
+	d.MarkFixed()
+	dropPastes(d, false)
+	return d, Chrono(Episodes(d.Errs)), nil
 }

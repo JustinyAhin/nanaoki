@@ -5,9 +5,9 @@ Go CLI and agent plugin. It reads Claude Code and Codex history on the user's ma
 ## Rules for the product
 
 - Local only. The CLI makes no network calls and uses no LLM.
-- Read `~/.claude` and `~/.codex` (or `$CLAUDE_CONFIG_DIR`, `$CODEX_HOME`) only. Write only to `~/.local/share/nanaoki/`.
+- Read `~/.claude` and `~/.codex` (or `$CLAUDE_CONFIG_DIR`, `$CODEX_HOME`) only. Write only to `~/.local/share/nanaoki/`. Exception: `nanaoki setup`, which the user runs on purpose, installs the plugin and the Codex hooks and skills.
 - Hooks fail open. On any error, print nothing, exit 0, and write to `hook.log`. Never return an explicit "allow".
-- Hooks must stay fast: under 50 ms at p95. Read the cached index. Never rebuild it in a hook.
+- Hooks must stay fast: under 50 ms at p95. Read the cached index. Never rebuild it in the hook process. The SessionStart hook may start a detached `nanaoki refresh`, at most once a day.
 - Guards warn and suggest the fixed command by default. Block only when the guard is safe. Never change a command silently.
 - Stay quiet on probes (`rules.IsProbe`). A noisy hook gets uninstalled.
 - Every number in the report must link back to evidence (file and line) in `--format json`.

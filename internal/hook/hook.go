@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/JustinyAhin/nanaoki/internal/activity"
 	"github.com/JustinyAhin/nanaoki/internal/guards"
 	"github.com/JustinyAhin/nanaoki/internal/lessons"
 	"github.com/JustinyAhin/nanaoki/internal/rules"
@@ -40,6 +41,7 @@ type Deps struct {
 	Index    func() (*lessons.Index, error)
 	StateDir string
 	ShownLog string
+	GuardLog string
 	Env      func(cwd string) *guards.Env // nil: the real environment
 	Now      func() time.Time
 }
@@ -49,6 +51,7 @@ func DefaultDeps() Deps {
 		Index:    func() (*lessons.Index, error) { return lessons.LoadIndex(lessons.IndexPath()) },
 		StateDir: filepath.Join(lessons.DefaultDir(), "hook-state"),
 		ShownLog: lessons.ShownLogPath(),
+		GuardLog: activity.GuardLogPath(),
 		Now:      time.Now,
 	}
 }
@@ -98,6 +101,7 @@ func Handle(agent, event string, in Input, d Deps) (Output, error) {
 	if d.Now == nil {
 		d.Now = time.Now
 	}
+	start := d.Now()
 	st := loadState(d.StateDir, agent, in.SessionID)
 	defer st.save()
 	switch event {
@@ -120,7 +124,7 @@ func Handle(agent, event string, in Input, d Deps) (Output, error) {
 		if len(hits) == 0 {
 			return nil, nil
 		}
-		logShown(d, agent, in, event, hits)
+		logShown(d, start, agent, in, event, hits)
 		return context(event, "Lessons from your earlier sessions (nanaoki):\n"+lessons.Render(hits)), nil
 	case "PreToolUse":
 		cmd := commandOf(in.ToolInput)
@@ -145,6 +149,7 @@ func Handle(agent, event string, in Input, d Deps) (Output, error) {
 		if len(fs) == 0 {
 			return nil, nil
 		}
+		logGuards(d, start, agent, in, cmd, fs)
 		var msgs []string
 		block := false
 		for _, f := range fs {
@@ -192,7 +197,7 @@ func Handle(agent, event string, in Input, d Deps) (Output, error) {
 		if len(hits) == 0 {
 			return nil, nil
 		}
-		logShown(d, agent, in, event, hits)
+		logShown(d, start, agent, in, event, hits)
 		return context(event, "This error matches lessons from your earlier sessions (nanaoki):\n"+lessons.Render(hits)), nil
 	}
 	return nil, nil
@@ -282,14 +287,38 @@ func failureOf(raw json.RawMessage) (string, bool) {
 	return text, hasCode && code != 0
 }
 
-func logShown(d Deps, agent string, in Input, event string, hits []lessons.Hit) {
+func msSince(d Deps, start time.Time) float64 {
+	return float64(d.Now().Sub(start).Microseconds()) / 1000
+}
+
+func logShown(d Deps, start time.Time, agent string, in Input, event string, hits []lessons.Hit) {
 	var es []lessons.ShownEntry
 	now := d.Now().UTC().Format(time.RFC3339)
+	ms := msSince(d, start)
 	for _, h := range hits {
 		es = append(es, lessons.ShownEntry{Ts: now, Lesson: h.Lesson.ID, Event: event, Agent: agent, Session: in.SessionID,
-			Project: rules.Project(in.Cwd)})
+			Project: rules.Project(in.Cwd), Ms: ms})
 	}
 	_ = lessons.AppendShown(d.ShownLog, es)
+}
+
+func logGuards(d Deps, start time.Time, agent string, in Input, cmd string, fs []guards.Finding) {
+	if d.GuardLog == "" {
+		return
+	}
+	now := d.Now().UTC().Format(time.RFC3339)
+	ms := msSince(d, start)
+	c := activity.Cmd(cmd)
+	es := make([]activity.GuardEntry, 0, len(fs))
+	for _, f := range fs {
+		e := activity.GuardEntry{Ts: now, Agent: agent, Session: in.SessionID, Project: rules.Project(in.Cwd), Guard: f.Guard,
+			Cause: f.Cause, Decision: f.Decision, Cmd: c, Ms: ms}
+		if f.Fixed != "" {
+			e.Fixed = activity.Cmd(f.Fixed)
+		}
+		es = append(es, e)
+	}
+	_ = activity.Append(d.GuardLog, es...)
 }
 
 type state struct {

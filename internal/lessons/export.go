@@ -44,12 +44,13 @@ func Global(L *Lesson) bool {
 func ShownLogPath() string { return filepath.Join(DefaultDir(), "shown.jsonl") }
 
 type ShownEntry struct {
-	Ts      string `json:"ts"`
-	Lesson  string `json:"lesson"`
-	Event   string `json:"event"`
-	Agent   string `json:"agent"`
-	Session string `json:"session"`
-	Project string `json:"project"`
+	Ts      string  `json:"ts"`
+	Lesson  string  `json:"lesson"`
+	Event   string  `json:"event"`
+	Agent   string  `json:"agent"`
+	Session string  `json:"session"`
+	Project string  `json:"project"`
+	Ms      float64 `json:"ms,omitempty"` // time in the hook process before the log write
 }
 
 // AppendShown adds lines to the shown log. Errors are ignored by the caller (the hooks fail open).

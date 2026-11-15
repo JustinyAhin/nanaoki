@@ -36,10 +36,8 @@ tar -xzf "$tmp/$file" -C "$tmp"
 mkdir -p "$BIN_DIR"
 install -m 0755 "$tmp/nanaoki" "$BIN_DIR/nanaoki"
 
-share="$HOME/.local/share/nanaoki/plugin"
-mkdir -p "$share" && cp -R "$tmp/plugin/." "$share/"
-
 echo "Installed $BIN_DIR/nanaoki"
 case ":$PATH:" in *":$BIN_DIR:"*) ;; *) echo "Add $BIN_DIR to your PATH." ;; esac
-echo "Plugin files: $share (claude --plugin-dir $share/claude-code)"
-echo "Next: nanaoki --split auto"
+echo "Next: nanaoki --split auto      (your numbers)"
+echo "      nanaoki setup claude        (plugin for Claude Code)"
+echo "      nanaoki setup codex         (hooks for Codex)"

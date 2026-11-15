@@ -2,7 +2,7 @@
 
 The plugin turns your own Claude Code and Codex history into lessons, and brings them back at the right moment. Everything runs on your machine. It uses no LLM and no network.
 
-It has four parts:
+It has five parts:
 
 1. **Lessons store.** `nanaoki lessons build` reads the event store and builds the lessons: an error cause or exact error signature that a later command in the same session fixed, and an instruction you typed in 2+ sessions. `nanaoki lessons export` writes one markdown file per confirmed lesson.
 2. **Hooks.** `nanaoki hook EVENT` reads the hook JSON on stdin and prints the reply for Claude Code or Codex:
@@ -11,68 +11,58 @@ It has four parts:
    - at the first prompt of a session: up to 2 rules that match the prompt and this repo (strict match).
 3. **Session search.** `nanaoki search "QUERY"` is full-text search over all prompts, assistant messages and tool results, with citations. The `past-sessions` skill tells agents when and how to use it.
 4. **Rule suggestions.** `nanaoki rules suggest` proposes lines for `~/.claude/CLAUDE.md`, `~/.codex/AGENTS.md` or a project `AGENTS.md`, as a diff. It never writes the file.
+5. **Stats and notes.** The hooks log each lesson shown (`shown.jsonl`), each guard that fired (`guards.jsonl`, with the redacted command and the suggested command) and each hook call with its duration (`calls.jsonl`). `nanaoki stats --since 7d` reads these logs and the event store: whether the same failure came back after a lesson, whether the next command used a guard's fix, noise candidates, repeats that got no lesson, hook health, and a rough before/after of the repeat-after-fix rate. `nanaoki note "text" --noise|--useful|--wrong|--missing [--lesson ID|--guard ID]` saves your feedback (`notes.jsonl`); the `nanaoki-feedback` skill lets you say "note that this lesson was noise" to the agent.
 
 
 ## Install
 
-1. Build the binary and put it on your PATH (Go 1.26+):
-
-   ```sh
-   cd cli
-   go install ./cmd/nanaoki        # or: go build -o ~/.local/bin/nanaoki ./cmd/nanaoki
-   ```
-
+1. Install the binary (see README) and check it: `nanaoki version`.
 2. Read your history and build the lessons (about 30 s the first time):
 
    ```sh
-   nanaoki ingest
-   nanaoki lessons build
+   nanaoki ingest && nanaoki lessons build
    ```
 
-   Run both again from time to time (for example once a day) to add new sessions. The hooks read the lesson index that `lessons build` writes; they do not rebuild it.
-
-3. Optional: export the lessons as markdown.
-
-   ```sh
-   nanaoki lessons export              # global lessons -> ~/.local/share/nanaoki/lessons/
-   cd ~/work/projects/my-app && nanaoki lessons export --project   # this project's lessons -> ./.lessons/
-   ```
+   After that, the SessionStart hook keeps them fresh: when the lesson index is older than a day, it starts `nanaoki refresh` (ingest + lessons build) in the background and returns at once. The log is `~/.local/share/nanaoki/refresh.log`. `NANAOKI_AUTO_REFRESH=0` turns it off.
 
 ### Claude Code
 
-The plugin is in `cli/plugin/claude-code/` (manifest, `hooks/hooks.json`, and the `past-sessions` skill). `cli/plugin/` is a local marketplace.
-
 ```sh
-claude plugin marketplace add /path/to/github.com/JustinyAhin/nanaoki/plugin
-claude plugin install nanaoki@nanaoki-local --scope user
+nanaoki setup claude
 ```
 
-To try it for one session without installing: `claude --plugin-dir /path/to/github.com/JustinyAhin/nanaoki/plugin/claude-code`.
+This runs `claude plugin marketplace add JustinyAhin/nanaoki` and `claude plugin install nanaoki@nanaoki --scope user`. Start a new session to load the hooks. The marketplace file is `.claude-plugin/marketplace.json` at the repo root; the plugin is `plugin/claude-code/` (manifest, `hooks/hooks.json`, and the `past-sessions` and `nanaoki-feedback` skills).
 
-`skills` in the plugin folder is a symlink to `cli/plugin/skills`. If your Claude Code version does not follow it, replace the link with a copy of that folder.
-
-Alternative without the plugin: copy the `"hooks"` object of `cli/plugin/claude-code/hooks/hooks.json` into `~/.claude/settings.json`, and copy `cli/plugin/skills/past-sessions/` to `~/.claude/skills/`.
+From a clone: `nanaoki setup claude --from /path/to/nanaoki`. For one session only: `claude --plugin-dir /path/to/nanaoki/plugin/claude-code`.
 
 Hooks used: `SessionStart`, `UserPromptSubmit`, `PreToolUse` (matcher `Bash`), `PostToolUseFailure` (all tools).
 
 ### Codex
 
-Codex hooks are on by default (`[features] hooks = false` in `config.toml` turns them off). Copy `cli/plugin/codex/hooks.json` to `~/.codex/hooks.json` (or merge its `"hooks"` object into an existing file). Then open `/hooks` in Codex and trust the new hooks: Codex skips hooks it has not reviewed.
+```sh
+nanaoki setup codex
+```
 
-For the skill, copy `cli/plugin/skills/past-sessions/` to `~/.codex/skills/`.
+This adds the nanaoki hooks to `~/.codex/hooks.json` (your other hooks stay; the old file goes to `hooks.json.bak`) and copies the skills to `~/.codex/skills/`. Run it again after an upgrade. Then open `/hooks` in Codex and trust the new hooks: Codex skips hooks it has not reviewed. Codex hooks are on by default (`[features] hooks = false` in `config.toml` turns them off).
 
 Hooks used: `SessionStart`, `UserPromptSubmit`, `PreToolUse`, `PostToolUse`. Codex has no failure event, so the `PostToolUse` handler finds a failure from the tool response (a non-zero `exit_code` field, or an "Exit code: N" / "Process exited with code N" line).
+
+### Optional: lesson files
+
+```sh
+nanaoki lessons export              # global lessons -> ~/.local/share/nanaoki/lessons/
+cd ~/work/projects/my-app && nanaoki lessons export --project   # this project's lessons -> ./.lessons/
+```
 
 ## Uninstall
 
 ```sh
-claude plugin uninstall nanaoki@nanaoki-local
-claude plugin marketplace remove nanaoki-local
+nanaoki setup claude --uninstall
+nanaoki setup codex --uninstall
+rm -rf ~/.local/share/nanaoki      # all data: event store, indexes, logs
 ```
 
-Codex: remove the nanaoki entries from `~/.codex/hooks.json` (or delete the file if it holds nothing else) and remove `~/.codex/skills/past-sessions/`.
-
-Data: `rm -rf ~/.local/share/nanaoki` removes the event store, the lesson index, the search index, the hook state and the logs. Remove `.lessons/` folders in repos by hand if you exported them.
+Remove `.lessons/` folders in repos by hand if you exported them.
 
 ## What each hook does
 
@@ -170,8 +160,8 @@ Known limit: a pasted log line that holds "remember", "make sure" or "never" can
 
 ## Privacy
 
-- Local only. No network calls. No LLM. The hooks read the lesson index and write only under `~/.local/share/nanaoki/` (hook state, `shown.jsonl`, `hook.log`, `node-version.json`).
-- Read-only on `~/.claude` and `~/.codex`. `rules suggest` reads `CLAUDE.md` / `AGENTS.md` to compare and never writes them. The plugin files are snippets: nothing here installs itself.
+- Local only. No network calls. No LLM. The hooks read the lesson index and write only under `~/.local/share/nanaoki/` (hook state, `shown.jsonl`, `hook.log`, `node-version.json`). `nanaoki setup` is the only command that writes outside that folder.
+- Read-only on `~/.claude` and `~/.codex`. `rules suggest` reads `CLAUDE.md` / `AGENTS.md` to compare and never writes them. Nothing installs itself: you run `nanaoki setup`.
 - What lessons hold: the cause text, the normalized error signature (paths, numbers, quoted strings replaced) and the fix command, cut to 160 characters and redacted (secrets, tokens, emails, phone numbers, IP addresses, handles, your home folder, your login and git user name, and the names in `~/.local/share/nanaoki/private_names.txt`). Evidence has project names, dates, session ids and file pointers, not prompts or outputs.
 - The lesson index and the search index hold your history on your disk, like the event store. The search index keeps the full text of messages and tool results so it can show snippets. Snippets can hold secrets from old sessions; the skill tells agents not to copy them into commits or files.
 - `.lessons/` files are meant for git. Read them before you commit them: they name projects and contain fix commands.
