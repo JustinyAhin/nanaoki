@@ -1,0 +1,17 @@
+{
+  "description": "nanaoki: guards before Bash, lessons after a failed tool call and at the first prompt of a session. Needs `nanaoki` on PATH and a built lesson index (nanaoki lessons build).",
+  "hooks": {
+    "SessionStart": [
+      {"hooks": [{"type": "command", "command": "nanaoki hook --agent claude session-start", "timeout": 5}]}
+    ],
+    "UserPromptSubmit": [
+      {"hooks": [{"type": "command", "command": "nanaoki hook --agent claude user-prompt-submit", "timeout": 5}]}
+    ],
+    "PreToolUse": [
+      {"matcher": "Bash", "hooks": [{"type": "command", "command": "nanaoki hook --agent claude pre-tool-use", "timeout": 5}]}
+    ],
+    "PostToolUseFailure": [
+      {"hooks": [{"type": "command", "command": "nanaoki hook --agent claude post-tool-use-failure", "timeout": 5}]}
+    ]
+  }
+}

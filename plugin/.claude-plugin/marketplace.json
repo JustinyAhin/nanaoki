@@ -1,0 +1,14 @@
+{
+  "name": "nanaoki-local",
+  "owner": {
+    "name": "nanaoki"
+  },
+  "plugins": [
+    {
+      "name": "nanaoki",
+      "source": "./claude-code",
+      "description": "Lessons, guards and past-session search from your local agent history."
+    }
+  ],
+  "description": "Local marketplace for the nanaoki plugin (lessons, guards, past-session search)."
+}

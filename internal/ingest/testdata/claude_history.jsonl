@@ -1,0 +1,3 @@
+{"display":"no co-author lines in commits please","pastedContents":{},"timestamp":1771900000000,"project":"/Users/alice/work/projects/demo-app","sessionId":"bbbbbbbb-0000-4000-8000-000000000001"}
+{"display":"see [Pasted text #1]","pastedContents":{"1":{"id":1,"type":"text","content":"line a\nline b\nTypeError: x is undefined\nfatal error in build"}},"timestamp":1771900060000,"project":"/Users/alice/work/projects/demo-app","sessionId":"bbbbbbbb-0000-4000-8000-000000000001"}
+{"display":"   ","pastedContents":{},"timestamp":1771900070000,"project":"/Users/alice","sessionId":"bbbbbbbb-0000-4000-8000-000000000001"}

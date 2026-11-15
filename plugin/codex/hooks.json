@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {"hooks": [{"type": "command", "command": "nanaoki hook --agent codex session-start", "timeout": 5}]}
+    ],
+    "UserPromptSubmit": [
+      {"hooks": [{"type": "command", "command": "nanaoki hook --agent codex user-prompt-submit", "timeout": 5}]}
+    ],
+    "PreToolUse": [
+      {"matcher": "^(Bash|shell|exec_command|local_shell)$", "hooks": [{"type": "command", "command": "nanaoki hook --agent codex pre-tool-use", "timeout": 5, "statusMessage": "nanaoki guards"}]}
+    ],
+    "PostToolUse": [
+      {"hooks": [{"type": "command", "command": "nanaoki hook --agent codex post-tool-use", "timeout": 5}]}
+    ]
+  }
+}

@@ -1,0 +1,9 @@
+{"timestamp":"2026-02-25T09:00:00.000Z","type":"session_meta","payload":{"id":"019c0000-0000-7000-8000-00000000000a","timestamp":"2026-02-25T09:00:00.000Z","cwd":"/Users/alice/work/projects/demo-app","originator":"codex_cli_rs"}}
+{"timestamp":"2026-02-25T09:00:01.000Z","type":"response_item","payload":{"type":"message","role":"user","content":[{"type":"input_text","text":"ignored by the parser"}]}}
+{"timestamp":"2026-02-25T09:00:01.500Z","type":"event_msg","payload":{"type":"user_message","message":"run the checks","images":[]}}
+{"timestamp":"2026-02-25T09:00:02.000Z","type":"response_item","payload":{"type":"function_call","name":"shell","arguments":"{\"command\":[\"bash\",\"-lc\",\"bun run check\"],\"workdir\":\"/Users/alice/work/projects/demo-app\"}","call_id":"c1"}}
+{"timestamp":"2026-02-25T09:00:05.000Z","type":"response_item","payload":{"type":"function_call_output","call_id":"c1","output":"{\"output\":\"svelte-check found 2 errors\\n\",\"metadata\":{\"exit_code\":1,\"duration_seconds\":3.0}}"}}
+{"timestamp":"2026-02-25T09:01:00.000Z","type":"response_item","payload":{"type":"function_call","name":"shell","arguments":"{\"command\":[\"bash\",\"-lc\",\"bun run check\"]}","call_id":"c2"}}
+{"timestamp":"2026-02-25T09:01:04.000Z","type":"response_item","payload":{"type":"function_call_output","call_id":"c2","output":"done\nProcess exited with code 0"}}
+{"timestamp":"2026-02-25T09:02:00.000Z","type":"event_msg","payload":{"type":"agent_message","message":"Checks pass now."}}
+{"timestamp":"2026-02-25T09:02:01.000Z","type":"event_msg","payload":{"type":"token_count","info":null}}

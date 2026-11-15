@@ -1,0 +1,6 @@
+{"timestamp":"2026-05-10T12:00:00.000Z","type":"session_meta","payload":{"id":"019d0000-0000-7000-8000-00000000000b","cwd":"/Users/alice/work/consulting/client-x","originator":"codex_exec"}}
+{"type":"event_msg","timestamp":"2026-05-10T12:00:01.000Z","payload":{"type":"user_message","message":"deploy it but don't push yet"}}
+{"timestamp":"2026-05-10T12:00:02.000Z","type":"event_msg","payload":{"type":"exec_command_end","call_id":"e1","command":["zsh","-lc","naps search foo"],"exit_code":127,"aggregated_output":"zsh:1: command not found: naps\n","status":"completed"}}
+{"timestamp":"2026-05-10T12:00:03.000Z","type":"event_msg","payload":{"type":"mcp_tool_call_end","call_id":"m1","invocation":{"server":"docs","tool":"search","arguments":{}},"result":{"Err":"tool timed out"}}}
+{"timestamp":"2026-05-10T12:00:04.000Z","type":"event_msg","payload":{"type":"patch_apply_end","call_id":"p1","stdout":"","stderr":"patch rejected: context mismatch","success":false,"changes":{"/Users/alice/work/consulting/client-x/a.ts":{}}}}
+{"timestamp":"2026-05-10T12:00:05.000Z","type":"compacted","payload":{"message":"summary"}}

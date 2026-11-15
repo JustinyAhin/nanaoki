@@ -1,0 +1,16 @@
+{
+  "name": "nanaoki",
+  "version": "0.1.0",
+  "description": "Lessons from your own Claude Code and Codex sessions: guards before shell commands, matching lessons after a failure and at the first prompt, and a past-sessions search skill. Local only.",
+  "license": "MIT",
+  "keywords": [
+    "memory",
+    "lessons",
+    "hooks",
+    "zsh",
+    "guards"
+  ],
+  "author": {
+    "name": "nanaoki"
+  }
+}
