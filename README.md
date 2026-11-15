@@ -2,9 +2,62 @@
 
 Your coding agent fixed this error last month. In another project. Then it forgot.
 
-`nanaoki` reads the Claude Code and Codex history that is already on your machine, finds the mistakes your agents keep repeating, and shows the fix that worked last time, at the moment the same error comes back.
+I ran this on 9 months of my own Claude Code and Codex history (3,030 Codex sessions, 18K tool errors):
 
-Everything runs locally. No LLM, no network, no account.
+- **40%** of the errors from Sep to Nov were causes my agents had already fixed between Feb and Aug.
+- **68%** of those repeats had the fix only in a **different project**.
+- The top one, a zsh quoting error, showed up in **465 sessions across 54 projects**.
+- I typed "don't make any changes yet" in **181 different sessions**.
+
+`nanaoki` reads the history that is already on your machine, finds the mistakes your agents keep repeating, and shows the fix that worked last time, at the moment the same error comes back. Everything runs locally. No LLM, no network, no account.
+
+## What it looks like
+
+Your numbers, in one command:
+
+```
+$ nanaoki --split auto
+
+3. REPEAT-AFTER-FIX
+  2,320 of 5,685 TEST error episodes (41%) hit a cause or signature that was
+  already fixed in TRAIN. Same project: 705. Other project only: 1,615.
+
+  Repeats  Same proj  Other proj  Error                 Earliest fix
+  540      476        64          command_not_found     2026-02-26
+  463      403        60          zsh_glob_nomatch      2026-02-25
+  459      393        66          path_guess            2026-02-25
+  118      78         40          svelte_check_errors   2026-03-06
+```
+
+Before a known-bad command runs, the agent gets a warning and the fixed command:
+
+```
+nanaoki guard: [zsh_glob] zsh fails with "no matches found" when an unquoted glob
+matches no file: `src/routes/blog/[slug]`. Quote words with [ ] * ?.
+Suggested command: `ls 'src/routes/blog/[slug]'`
+```
+
+After a failure, the agent gets the lesson from the session that already fixed it, even in another repo:
+
+```
+This error matches lessons from your earlier sessions (nanaoki):
+[L1] SvelteKit lint: wrap internal hrefs/goto with resolve() from $app/paths
+(svelte/no-navigation-without-resolve). Fix seen (project-b, 2026-09-03).
+```
+
+## Why not just CLAUDE.md?
+
+I tested that first. On 108 real repeats from my history, replayed and scored by two AI judges (Claude and GPT, 93% agreement):
+
+| | Repeats prevented | Context per trigger |
+|---|---|---|
+| No memory | 0% | 0 tokens |
+| An AGENTS.md written from the earlier history | ~31% | ~1,700 tokens, every turn |
+| Lessons shown at the moment of the error | 53-59% | ~36 tokens |
+
+A rules file is good for stable decisions, so `nanaoki rules suggest` proposes those lines for your file. It loses on the long tail of one-off errors, and on fixes that live in another repo.
+
+These numbers are one person's data and a replay, not live use. Run it on your history and see what yours are.
 
 ## Install
 
