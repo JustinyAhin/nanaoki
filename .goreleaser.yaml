@@ -1,0 +1,68 @@
+# Release config for nanaoki. Used by .github/workflows/release.yml on a v* tag,
+# or locally: goreleaser release --snapshot --clean (no upload).
+version: 2
+
+project_name: nanaoki
+
+before:
+  hooks:
+    - go mod tidy
+    - go test ./...
+
+builds:
+  - id: nanaoki
+    main: ./cmd/nanaoki
+    binary: nanaoki
+    env:
+      - CGO_ENABLED=0 # pure Go (modernc sqlite, klauspost zstd): cross-compiles without a C toolchain
+    goos: [darwin, linux, windows]
+    goarch: [amd64, arm64]
+    ignore:
+      - goos: windows
+        goarch: arm64
+    flags: [-trimpath]
+    ldflags:
+      - -s -w -X main.version={{ .Version }}
+
+archives:
+  - id: nanaoki
+    formats: [tar.gz]
+    format_overrides:
+      - goos: windows
+        formats: [zip]
+    name_template: "nanaoki_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    files:
+      - README.md
+      - LICENSE
+      - PLUGIN.md
+      - plugin/**/*
+
+checksum:
+  name_template: checksums.txt
+
+changelog:
+  sort: asc
+  filters:
+    exclude: ["^docs:", "^test:", "^chore:"]
+
+release:
+  draft: false
+  prerelease: auto
+
+# Homebrew: needs a public repo JustinyAhin/homebrew-tap and a HOMEBREW_TAP_TOKEN secret
+# (a fine-grained token with contents:write on that repo). Without the secret, this step is skipped.
+brews:
+  - name: nanaoki
+    repository:
+      owner: JustinyAhin
+      name: homebrew-tap
+      token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
+    skip_upload: '{{ if index .Env "HOMEBREW_TAP_TOKEN" }}false{{ else }}true{{ end }}'
+    homepage: https://nanaoki.com
+    description: Stop your coding agents from repeating mistakes they already fixed. Local, no LLM.
+    license: MIT
+    install: |
+      bin.install "nanaoki"
+      pkgshare.install "plugin"
+    test: |
+      system "#{bin}/nanaoki", "version"

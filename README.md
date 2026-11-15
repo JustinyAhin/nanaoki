@@ -8,11 +8,25 @@ Everything runs locally. No LLM, no network, no account.
 
 ## Install
 
-Go 1.26+:
+macOS or Linux:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/JustinyAhin/nanaoki/main/install.sh | sh
+```
+
+Homebrew:
+
+```sh
+brew install JustinyAhin/tap/nanaoki
+```
+
+With Go 1.26+:
 
 ```sh
 go install github.com/JustinyAhin/nanaoki/cmd/nanaoki@latest
 ```
+
+Windows: download the zip from the [releases page](https://github.com/JustinyAhin/nanaoki/releases).
 
 ## See your numbers
 

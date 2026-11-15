@@ -52,7 +52,14 @@ history.jsonl) and $CLAUDE_CONFIG_DIR or ~/.claude (projects/**, history.jsonl, 
 
 var dateRe = regexp.MustCompile(`^\d{4}-\d{2}-\d{2}$`)
 
+// version is set at build time: -ldflags "-X main.version=v0.1.0" (goreleaser does this).
+var version = "dev"
+
 func main() {
+	if len(os.Args) > 1 && (os.Args[1] == "version" || os.Args[1] == "--version" || os.Args[1] == "-v") {
+		fmt.Println("nanaoki", version)
+		return
+	}
 	if len(os.Args) > 1 && os.Args[1] == "hook" {
 		os.Exit(runHook(os.Args[2:], os.Stdin, os.Stdout))
 	}
