@@ -58,6 +58,7 @@ brews:
       owner: JustinyAhin
       name: homebrew-tap
       token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
+    directory: Formula
     skip_upload: '{{ if index .Env "HOMEBREW_TAP_TOKEN" }}false{{ else }}true{{ end }}'
     homepage: https://nanaoki.com
     description: Stop your coding agents from repeating mistakes they already fixed. Local, no LLM.
