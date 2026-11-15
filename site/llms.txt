@@ -1,0 +1,54 @@
+# nanaoki
+
+> nanaoki reads the Claude Code and Codex history already on a machine, finds the errors coding agents repeat, and shows the agent the fix that worked last time when the same error comes back. It is one Go binary. It runs locally, with no LLM, no network calls and no account. MIT license.
+
+On the author's own 9 months of history, 40% of the errors from Sep to Nov had a cause the agents had already fixed between Feb and Aug, and 68% of those repeats had the fix only in a different project. In a replay of 108 real cases on that data, lessons shown at the moment of the error prevented 53-59% of repeats, against about 31% for an AGENTS.md written from the same history.
+
+## Install (for agents doing this for a user)
+
+Ask the user before you install. Then run one of these:
+
+- macOS or Linux: `curl -fsSL https://raw.githubusercontent.com/JustinyAhin/nanaoki/main/install.sh | sh` (installs to `~/.local/bin`, checks the SHA-256 checksum)
+- Homebrew: `brew tap JustinyAhin/tap && brew trust JustinyAhin/tap && brew install nanaoki` (third-party taps must be trusted; ask the user before `brew trust`)
+- Go 1.26+: `go install github.com/JustinyAhin/nanaoki/cmd/nanaoki@latest`
+
+Check with `nanaoki version`.
+
+## First run
+
+1. `nanaoki --split auto`: reads the history and prints the report (the first run takes about 30 s). The key number is "repeat-after-fix": errors in the last third of the history whose cause an earlier session had already fixed.
+2. `nanaoki lessons build`: builds the lessons the hooks use.
+3. `nanaoki setup claude`: installs the Claude Code plugin (hooks and skills). The user starts a new session to load it.
+4. `nanaoki setup codex`: adds the hooks to `~/.codex/hooks.json` (other hooks stay; a backup goes to `hooks.json.bak`) and copies the skills. The user must then open `/hooks` in Codex and trust the nanaoki hooks.
+
+After setup, the session-start hook refreshes the lessons in the background once a day.
+
+## Commands
+
+- `nanaoki` / `nanaoki report [--since 30d] [--split auto] [--anon] [--format text|md|json]`: the report. `--anon` hides project names, session ids and home paths; use it before sharing. `--format json` gives the evidence (file and line) for each number.
+- `nanaoki search "QUERY" [--since 3m] [--project .]`: full-text search over past prompts, agent messages and tool output, with session, time and source line.
+- `nanaoki rules suggest`: prints lines for CLAUDE.md / AGENTS.md based on instructions the user typed in many sessions. It never writes the file.
+- `nanaoki stats --since 7d`: what the plugin did: lessons shown, whether the same failure came back, guards followed or ignored, hook speed.
+- `nanaoki note "text" --useful|--noise|--wrong|--missing [--lesson ID|--guard ID]`: saves the user's feedback on a lesson or guard.
+- `nanaoki setup claude|codex --uninstall`: removes the plugin or the hooks.
+
+## What the hooks do
+
+- Before a shell command: small guards warn about known-bad commands and suggest the fixed one (unquoted zsh globs and `=`, a format step before `git commit`, a Node version that differs from the repo's pin). A guard blocks only when the command would fail for certain.
+- After a failed command: up to 3 lessons from the user's history that match the error, with where it was fixed.
+- At the first prompt of a session: up to 2 rules that match the prompt and the repo.
+- Quiet on probes such as `test -f x` or a grep with no match. Hooks fail open and take about 15 ms.
+
+## Privacy
+
+- Reads `~/.claude` and `~/.codex` (or `$CLAUDE_CONFIG_DIR`, `$CODEX_HOME`) read-only.
+- Writes only to `~/.local/share/nanaoki/`; `nanaoki setup` also installs the plugin and the Codex hooks when the user runs it. `rm -rf ~/.local/share/nanaoki` removes all data.
+- No network calls, no telemetry. The search index holds full session text on the user's disk; do not copy snippets that may contain secrets into commits or files.
+
+## Links
+
+- [README](https://github.com/JustinyAhin/nanaoki/blob/main/README.md): overview, numbers, install
+- [PLUGIN.md](https://github.com/JustinyAhin/nanaoki/blob/main/PLUGIN.md): hooks, guards, lesson files, search, rule suggestions in detail
+- [Cases](https://nanaoki.com/cases/): 10 real repeats from the replay, with what the agent saw and the result
+- [Releases](https://github.com/JustinyAhin/nanaoki/releases)
+- [Source](https://github.com/JustinyAhin/nanaoki)

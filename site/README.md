@@ -10,7 +10,7 @@ python3 -m http.server 8000   # then open http://localhost:8000
 
 ## Deploy
 
-Push deploys. Cloudflare Workers Builds watches the public repo `JustinyAhin/nanaoki` (root directory `site`, deploy command `bunx wrangler deploy`) and deploys `nanaoki-site` on each push to `main` that changes `site/`. In the private repo, edit `site/`, commit, then run `scripts/sync_public.sh "message"`.
+Push deploys. Cloudflare Workers Builds watches the public repo `JustinyAhin/nanaoki` (root directory `/site/`, deploy command `bunx wrangler deploy`) and deploys `nanaoki-site` on each push to `main` that changes `site/`. In the private repo, edit `site/`, commit, then run `scripts/sync_public.sh "message"`.
 
 `wrangler.toml` serves this folder as static assets on nanaoki.com and www.nanaoki.com, with Workers Logs and traces on. `.assetsignore` keeps the docs, config, card sources and preview screenshots out of the upload.
 
