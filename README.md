@@ -47,6 +47,8 @@ Read these numbers with care. This is my own data, from one laptop, and a replay
 
 ## Install
 
+If you are an agent installing this for someone, read [nanaoki.com/llms.txt](https://nanaoki.com/llms.txt) first.
+
 macOS or Linux:
 
 ```sh
