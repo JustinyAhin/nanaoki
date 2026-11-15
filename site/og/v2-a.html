@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>nanaoki social card v2-a: recurrence</title>
+<!-- Seven lines fall the same way, one after the other. The eighth rises. Render: site/og/render-v2.sh -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Newsreader:ital,opsz,wght@0,6..72,400;1,6..72,400&display=swap" rel="stylesheet">
+<style>
+  html, body { margin: 0; background: #f6f3ec; }
+  canvas { display: block; width: 1200px; height: 630px; }
+</style>
+</head>
+<body>
+<canvas id="c" width="2400" height="1260"></canvas>
+<script>
+const W = 1200, H = 630, M = 60;
+const INK = '27,26,23', ACCENT = '#c8402c';
+const SERIF = '"Newsreader", Georgia, serif';
+const MONO = '"IBM Plex Mono", ui-monospace, Menlo, monospace';
+const cv = document.getElementById('c');
+const g = cv.getContext('2d');
+g.scale(2, 2);
+
+function rng(seed) {
+  let a = seed >>> 0;
+  return () => {
+    a = a + 0x6D2B79F5 | 0;
+    let t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+
+function draw() {
+  g.fillStyle = '#f6f3ec'; g.fillRect(0, 0, W, H);
+  const light = g.createRadialGradient(1010, 90, 0, 1010, 90, 620);
+  light.addColorStop(0, 'rgba(255,253,247,.95)');
+  light.addColorStop(1, 'rgba(255,253,247,0)');
+  g.fillStyle = light; g.fillRect(0, 0, W, H);
+
+  // the bundle: eight parallel lines, the top one is the accent
+  const N = 8, GAP = 10, Y0 = 318, X_FIRST = 268, STEP = 76;
+  const FALL_W = 236, FALL_H = 330, FADE = 236;
+  g.lineJoin = 'round'; g.lineCap = 'butt';
+
+  for (let i = N - 1; i >= 1; i--) {
+    const y0 = Y0 + i * GAP;
+    const xf = X_FIRST + (N - 1 - i) * STEP;
+    const grad = g.createLinearGradient(0, y0, 0, y0 + FADE);
+    const a = .42 + .34 * (N - 1 - i) / (N - 2);   // older falls are fainter
+    grad.addColorStop(0, `rgba(${INK},${a})`);
+    grad.addColorStop(.25, `rgba(${INK},${a * .66})`);
+    grad.addColorStop(1, `rgba(${INK},0)`);
+    g.strokeStyle = grad; g.lineWidth = 1.5;
+    g.beginPath(); g.moveTo(-10, y0); g.lineTo(xf, y0);
+    for (let k = 1; k <= 120; k++) {
+      const t = k / 120;
+      g.lineTo(xf + FALL_W * t, y0 + FALL_H * Math.pow(t, 2.3));
+    }
+    g.stroke();
+  }
+
+  // the eighth: same start, it rises
+  const xr = X_FIRST + (N - 1) * STEP;
+  g.strokeStyle = ACCENT; g.lineWidth = 2.8; g.lineCap = 'round';
+  g.beginPath(); g.moveTo(-10, Y0); g.lineTo(xr, Y0);
+  for (let k = 1; k <= 160; k++) {
+    const t = k / 160;
+    g.lineTo(xr + (W + 20 - xr) * t, Y0 - 262 * Math.pow(t, 2.3));
+  }
+  g.stroke();
+
+  // type
+  g.textBaseline = 'alphabetic'; g.textAlign = 'left';
+  g.fillStyle = `rgb(${INK})`;
+  g.font = `400 88px ${SERIF}`; g.letterSpacing = '-1.6px';
+  g.fillText('nanaoki', M - 3, 132);
+  g.letterSpacing = '0px';
+  g.font = `italic 400 34px ${SERIF}`;
+  g.fillStyle = '#6f6b62';
+  g.fillText('Your agent already fixed this.', M, 186);
+
+  g.font = `400 24px ${MONO}`; g.textAlign = 'right';
+  g.fillStyle = '#6f6b62';
+  g.fillText('nanaoki.com', W - M, H - M + 4);
+  g.textAlign = 'left';
+}
+
+Promise.all([
+  document.fonts.load(`400 88px "Newsreader"`),
+  document.fonts.load(`italic 400 34px "Newsreader"`),
+  document.fonts.load(`400 24px "IBM Plex Mono"`),
+]).then(() => document.fonts.ready).then(() => { draw(); document.title = 'ready'; });
+</script>
+</body>
+</html>

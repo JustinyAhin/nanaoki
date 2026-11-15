@@ -1,3 +1,6 @@
 /nanaoki
 *.db
 .DS_Store
+
+# Cloudflare
+site/.wrangler/
