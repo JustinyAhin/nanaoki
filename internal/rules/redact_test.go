@@ -48,22 +48,43 @@ func TestRedactDiff(t *testing.T) {
 	defer f.Close()
 	sc := bufio.NewScanner(f)
 	sc.Buffer(make([]byte, 1<<20), 1<<26)
-	sc.Scan()
+	if !sc.Scan() {
+		if err := sc.Err(); err != nil {
+			t.Fatalf("read header: %v", err)
+		}
+		t.Fatal("comparison file is empty")
+	}
 	var hdr struct{ Names []string }
-	json.Unmarshal(sc.Bytes(), &hdr)
+	if err := json.Unmarshal(sc.Bytes(), &hdr); err != nil {
+		t.Fatalf("decode header: %v", err)
+	}
+	if hdr.Names == nil {
+		t.Fatal("header must contain a names array")
+	}
 	SetNames(hdr.Names)
 	defer func() { namesOK = false }()
 	n, bad := 0, 0
 	for sc.Scan() {
-		var c struct{ In, Out, Out0 string }
-		json.Unmarshal(sc.Bytes(), &c)
+		var c struct{ In, Out *string }
+		if err := json.Unmarshal(sc.Bytes(), &c); err != nil {
+			t.Fatalf("decode line %d: %v", n+2, err)
+		}
+		if c.In == nil || c.Out == nil {
+			t.Fatalf("line %d must contain in and out strings", n+2)
+		}
 		n++
-		if got := Redact(c.In, 160); got != c.Out {
+		if got := Redact(*c.In, 160); got != *c.Out {
 			bad++
 			if bad <= 8 {
-				t.Errorf("diff:\n in  %q\n py  %q\n go  %q", Trunc(c.In, 300), c.Out, got)
+				t.Errorf("diff:\n in  %q\n py  %q\n go  %q", Trunc(*c.In, 300), *c.Out, got)
 			}
 		}
+	}
+	if err := sc.Err(); err != nil {
+		t.Fatalf("read comparison cases: %v", err)
+	}
+	if n == 0 {
+		t.Fatal("comparison file contains no cases")
 	}
 	t.Logf("%d cases, %d differ", n, bad)
 }

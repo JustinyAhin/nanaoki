@@ -190,7 +190,6 @@ func renderDoc(w io.Writer, r *Report, md bool) error {
 	}
 	p("All counts come from regex rules over local logs (no LLM). Treat them as estimates.")
 
-	// 1
 	h(1, "Coverage")
 	t.row("Agent", "Source", "Sessions", "Events", "Prompts", "Tool errors", "From", "To")
 	for _, s := range c.Sources {
@@ -206,7 +205,6 @@ func renderDoc(w io.Writer, r *Report, md bool) error {
 		p("WARNING: %s", wn)
 	}
 
-	// 2
 	h(2, "Repeated errors")
 	p("%s error keys (cause, or exact signature) occur in 2+ sessions on %d+ days: %s events. Top %d by sessions:",
 		num(r.RepeatedAll.Keys), r.RepeatedAll.MinDays, num(r.RepeatedAll.Events), min(10, len(r.Repeated)))
@@ -219,7 +217,6 @@ func renderDoc(w io.Writer, r *Report, md bool) error {
 	}
 	t.flush()
 
-	// 3
 	a := r.RAF
 	h(3, "Repeat-after-fix")
 	if a.Split != nil {
@@ -253,7 +250,6 @@ func renderDoc(w io.Writer, r *Report, md bool) error {
 	}
 	t.flush()
 
-	// 4
 	tl := r.TimeLost
 	h(4, "Estimated time lost")
 	p("About %.1f h in repeat-after-fix episodes (%s of them have a measurable gap), %.1f h in all error episodes. This is an estimate.",
@@ -274,7 +270,6 @@ func renderDoc(w io.Writer, r *Report, md bool) error {
 		t.rows = nil
 	}
 
-	// 5
 	h(5, "Restated rules")
 	if r.Filters {
 		p("Preferences you typed again in new sessions (2+ sessions). Counts are typed messages only. \"Not typed\" = command or skill calls (/name, $name) and templates; --no-filters counts them.")
@@ -315,7 +310,6 @@ func renderDoc(w io.Writer, r *Report, md bool) error {
 		p("Memory signals: %s.", strings.Join(other, "; "))
 	}
 
-	// 6
 	h(6, "Monthly trend")
 	p("Repeat sig = tool errors whose signature first appeared in another session on another day. RAF = repeat-after-fix episodes (rolling method). Rules restated = typed messages only, unless --no-filters.")
 	t.row("Month", "Tool errors", "Repeat sig", "Episodes", "RAF", "Prompts", "Rules restated")
@@ -325,7 +319,6 @@ func renderDoc(w io.Writer, r *Report, md bool) error {
 	}
 	t.flush()
 
-	// 7
 	h(7, "Suggested fixes")
 	for i, s := range r.Suggestions {
 		lbl := keyLabel(s.For)

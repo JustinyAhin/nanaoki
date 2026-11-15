@@ -17,6 +17,8 @@ import (
 var evs = []testfixture.Ev{
 	{Agent: "codex", Sid: "s1", Project: "alpha", Ts: "2026-09-01T10:00:00.000Z", Type: "tool_call", Text: "cat package.json", Out: `{"devDependencies":{"@sveltejs/kit":"2"}}`},
 	{Agent: "codex", Sid: "s1", Project: "alpha", Ts: "2026-09-01T10:00:01.000Z", Type: "tool_call", Text: "cat svelte.config.js"},
+	{Agent: "codex", Sid: "s1", Project: "alpha", Ts: "2026-09-01T10:00:02.000Z", Type: "tool_call", Text: "npx svelte-check"},
+	{Agent: "codex", Sid: "s1", Project: "alpha", Ts: "2026-09-01T10:00:03.000Z", Type: "tool_call", Text: "cat svelte.config.ts"},
 	{Agent: "codex", Sid: "s1", Project: "alpha", Ts: "2026-09-01T10:01:00.000Z", Type: "tool_error", Text: "ls src/routes/[slug]", Out: "(eval):1: no matches found: src/routes/[slug]", Err: true},
 	{Agent: "codex", Sid: "s1", Project: "alpha", Ts: "2026-09-01T10:02:00.000Z", Type: "tool_call", Text: "ls 'src/routes/[slug]'"},
 	{Agent: "codex", Sid: "s1", Project: "alpha", Ts: "2026-09-01T10:03:00.000Z", Type: "user_msg", Text: "Looks good. Never add co-author trailers to the commits in this repo."},
@@ -58,7 +60,10 @@ func TestRollingSnapshot(t *testing.T) {
 	if h := r.Snapshot(tr, "2026-09-05T09:00:10.000Z", "s1").Retrieve(tr, 3); len(h) != 0 {
 		t.Errorf("leakage: %+v", h)
 	}
-	if got := r.PstackOf("alpha", "2026-09-02"); !reflect.DeepEqual(got, map[string]bool{"sveltekit": true}) && len(got) != 0 {
+	if got := r.PstackOf("alpha", "2026-09-01T10:00:03.000Z"); len(got) != 0 {
+		t.Errorf("only two signals before the third timestamp: %v", got)
+	}
+	if got := r.PstackOf("alpha", "2026-09-02"); !reflect.DeepEqual(got, map[string]bool{"sveltekit": true}) {
 		t.Errorf("pstack = %v", got)
 	}
 	if got := r.RepoStacksAt("alpha", "2026-09-02"); !got["sveltekit"] || got["node"] { // node: 1 signal < 2

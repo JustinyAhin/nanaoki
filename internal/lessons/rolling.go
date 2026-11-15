@@ -135,7 +135,7 @@ var stackRx = []struct {
 	{"postgres", rules.Py(`\bpsql\b|postgres`, "(?i)")},
 }
 
-// StacksOfText ports stacks_of_text.
+// StacksOfText finds tools and frameworks named in command text.
 func StacksOfText(text string) []string {
 	var out []string
 	for _, s := range stackRx {
@@ -250,7 +250,7 @@ func repoSignalTable(db *sql.DB) (map[string]map[string][]string, error) {
 	return tab, nil
 }
 
-// countBefore is bisect_left(v, t).
+// countBefore counts timestamps strictly before t. v must be sorted.
 func countBefore(v []string, t string) int { return sort.SearchStrings(v, t) }
 
 // PstackOf ports pstack_of: stacks with 3+ command signals before t.
@@ -276,7 +276,7 @@ func (r *Rolling) pstacksAt(t string) map[string]map[string]bool {
 	return m
 }
 
-// RepoStacksAt ports stacks_at(repo_tab, p, t, REPO_SIGNAL_MIN).
+// RepoStacksAt returns stacks with at least RepoSignalMin file signals strictly before t.
 func (r *Rolling) RepoStacksAt(p, t string) map[string]bool {
 	out := map[string]bool{}
 	for s, v := range r.repo[p] {
@@ -308,7 +308,7 @@ var (
 // IsBareSkillCall ports is_bare_skill_call.
 func IsBareSkillCall(t string) bool { return bareSkillRx.MatchString(t) }
 
-// NormSentence ports norm_sentence.
+// NormSentence removes URLs, paths and punctuation, lowercases text, and replaces numbers with N.
 func NormSentence(s string) string {
 	s = strings.ToLower(s)
 	s = nsURL.ReplaceAllLiteralString(s, "URL")

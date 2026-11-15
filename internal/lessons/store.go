@@ -22,7 +22,7 @@ type Store struct {
 	IDF     map[string]float64
 }
 
-// MinScore is Store.MIN_SCORE.
+// MinScore is the minimum score for error and question hits.
 const MinScore = 2.0
 
 // NewStore indexes lessons. pstacks are the project stacks known at the store time.
@@ -64,7 +64,7 @@ func init() {
 	}
 }
 
-// Toks ports toks().
+// Toks returns lowercase words of at least three characters, without stop words.
 func Toks(text string) []string {
 	var out []string
 	for _, t := range wordRx.FindAllString(strings.ToLower(text), -1) {
@@ -75,7 +75,7 @@ func Toks(text string) []string {
 	return out
 }
 
-// TokSet is set(toks(text)).
+// TokSet returns the unique words from Toks.
 func TokSet(text string) map[string]bool {
 	m := map[string]bool{}
 	for _, t := range Toks(text) {

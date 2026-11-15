@@ -34,10 +34,8 @@ type Env struct {
 	SSHUsers map[string]string // host -> user, from fixed lessons
 	// Replay mode (eval): do not read the file system or PATH; assume the glob matched nothing and the
 	// "=word" is not a command (the error already happened).
-	Replay bool
-	// Session state
+	Replay    bool
 	FormatRan bool // a format script already ran in this session
-	// Hooks for tests
 	LookPath  func(string) (string, error)
 	ReadFile  func(string) ([]byte, error)
 	NodeMajor func() (int, bool) // major version of the node on PATH

@@ -75,10 +75,17 @@ func TestFiltersAndRules(t *testing.T) {
 		t.Errorf("since filter keeps the October repeat and its earlier fix: %+v", r.RAF)
 	}
 	r = build(t, Options{})
+	found := false
 	for _, it := range r.Rules {
-		if it.Key == "no_ai_attribution" && (it.Msgs != 2 || it.Sessions != 2) {
-			t.Errorf("attribution rule = %+v", it)
+		if it.Key == "no_ai_attribution" {
+			found = true
+			if it.Msgs != 2 || it.Sessions != 2 {
+				t.Errorf("attribution rule = %+v", it)
+			}
 		}
+	}
+	if !found {
+		t.Fatal("report is missing the no_ai_attribution rule")
 	}
 }
 
@@ -100,9 +107,15 @@ func TestRender(t *testing.T) {
 		}
 		out := b.String()
 		if f == "json" {
-			var v map[string]any
+			var v Report
 			if err := json.Unmarshal(b.Bytes(), &v); err != nil {
 				t.Fatalf("json: %v", err)
+			}
+			if !v.Filters || v.RAF.Repeats != 1 || len(v.RAF.Top) != 1 || len(v.Rules) == 0 {
+				t.Fatalf("json report lost counts or rules: %+v", v)
+			}
+			if p := v.RAF.Top[0].EarliestFix; p.Session != testfixture.CodexSep || p.RawLine != 4 {
+				t.Errorf("json evidence pointer = %+v", p)
 			}
 			continue
 		}

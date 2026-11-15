@@ -364,13 +364,10 @@ func Build(db *sql.DB, o Options) (*Report, error) {
 		r.Repeated[i].MinutesLost = round1(r.Repeated[i].MinutesLost)
 	}
 
-	// ---------- restated rules ----------
 	r.Rules = promptRules(d.Prompts, f, !o.NoFilters)
 
-	// ---------- monthly ----------
 	r.Monthly = monthly(d, reps, f, !o.NoFilters)
 
-	// ---------- suggestions ----------
 	r.Suggestions = suggest(r, o.Top)
 
 	if o.Split != nil {
