@@ -13,7 +13,6 @@ const (
 	maxAsst = 4000
 )
 
-// NInt is a nullable integer column.
 type NInt struct {
 	V     int64
 	Valid bool
@@ -52,7 +51,6 @@ func (b base) row(eventType string) Row {
 		Side: b.Side, RawFile: b.RawFile, RawLine: b.RawLine}
 }
 
-// finish ports build_event_store.row(): project from cwd, signature for errors.
 func (r Row) finish() Row {
 	if r.Cwd != "" && r.Project == "" {
 		r.Project = rules.Project(r.Cwd)
@@ -77,7 +75,6 @@ func withOutput(r Row, s string, ok bool) Row {
 	return r
 }
 
-// pasteRows ports paste_error_rows.
 func pasteRows(b base, text string) []Row {
 	t, sig, ok := rules.PasteError(text)
 	if !ok {

@@ -1,6 +1,4 @@
-// Package guards holds small deterministic checks that run before a shell command (PreToolUse). Each guard
-// matches a cause of rules.Lesson. A guard warns and suggests the fixed command; it blocks only when it is
-// marked safe (the command fails for certain). It never changes the command.
+// Package guards holds deterministic checks before a shell command. They warn, block only when safe, and never change the command.
 package guards
 
 import "strings"
@@ -13,7 +11,6 @@ type Word struct {
 	HasSubst   bool   // the word holds $(...), ${...}, $var or a backquote: skip it
 }
 
-// Command is one simple command: its words.
 type Command struct{ Words []Word }
 
 func isOp(c byte) bool {
@@ -151,7 +148,6 @@ func readWord(s string, i int) (Word, int) {
 	return w, i
 }
 
-// singleQuote returns the value as one single-quoted shell word.
 func singleQuote(v string) string { return "'" + strings.ReplaceAll(v, "'", `'\''`) + "'" }
 
 // replaceSpans replaces word spans in s (spans sorted, not overlapping).

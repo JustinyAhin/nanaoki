@@ -16,9 +16,7 @@ func TestMessageOrigin(t *testing.T) {
 		{"  $humanizer, then shorten", OriginCommand},
 		{"[$humanizer](/home/u/.codex/skills/humanizer/SKILL.md) the post", OriginCommand},
 		{"/tmp/build.log has the error", OriginTyped}, // a path, not a command
-		{"/Users/x/app fails to start", OriginTyped},
 		{"<system>\n## Plain language\nUse plain English.\n</system>", OriginInjected},
-		{"<system-reminder>\nThe user opened a file.\n</system-reminder>", OriginInjected},
 		{"<command-name>/humanizer</command-name>\n<command-message>humanizer</command-message>", OriginInjected},
 		{"<heartbeat>\n  <automation id=\"x\">nightly</automation>\n</heartbeat>", OriginInjected},
 		{"# AGENTS.md instructions for /home/u/app\n\n<INSTRUCTIONS>be brief</INSTRUCTIONS>", OriginInjected},

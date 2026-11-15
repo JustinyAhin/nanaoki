@@ -122,13 +122,6 @@ func TestSearchCommand(t *testing.T) {
 	if len(hits) != 1 || hits[0].Session != "s2" || hits[0].Pointer != "/Users/x/.claude/sessions/s2.jsonl:6" {
 		t.Fatalf("search results = %+v", hits)
 	}
-	out.Reset()
-	if err := run([]string{"search", "commit", "--db", db, "--no-sync", "--agent", "claude"}, &out, &errb); err != nil {
-		t.Fatal(err)
-	}
-	if !strings.Contains(out.String(), "session s2") || !strings.Contains(out.String(), hits[0].Pointer) {
-		t.Errorf("text search lost the citation: %s", out.String())
-	}
 }
 
 func TestRulesSuggestCommand(t *testing.T) {

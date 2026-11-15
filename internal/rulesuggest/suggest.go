@@ -1,11 +1,4 @@
-// Package rulesuggest proposes lines for CLAUDE.md / AGENTS.md from what the user keeps typing. It ports two
-// existing rules and adds no new heuristic:
-//   - restated rules: the preference rules of prompt_trends.py (rules.PromptRules, kind "pref") in typed prompts
-//     of 2+ sessions (the "State once" suggestion of the report);
-//   - stable decisions: instruction-like sentences (the C2 "pref" sentence rule) restated in typed prompts of
-//     2+ sessions.
-//
-// It never writes a file: it prints a proposed diff.
+// Package rulesuggest proposes CLAUDE.md and AGENTS.md lines from rules the user keeps typing. It never writes a file.
 package rulesuggest
 
 import (
@@ -22,7 +15,6 @@ import (
 // MinSessions: a rule or decision restated in this many sessions is stable.
 const MinSessions = 2
 
-// Rule is one proposed line.
 type Rule struct {
 	Kind     string         `json:"kind"` // restated | decision
 	Key      string         `json:"key"`
@@ -35,7 +27,6 @@ type Rule struct {
 	Last     string         `json:"last"`
 }
 
-// Options select the history.
 type Options struct {
 	Before          string          // only prompts before this ts ("" = all)
 	ExcludeSession  string          // eval: the trigger's own session

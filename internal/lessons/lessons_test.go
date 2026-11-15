@@ -53,7 +53,7 @@ func TestRollingSnapshot(t *testing.T) {
 	if len(hits) != 1 || hits[0].Lesson.Kind != "cause" || hits[0].Lesson.Sessions != 2 {
 		t.Fatalf("hits = %+v", hits)
 	}
-	if !strings.Contains(hits[0].Lesson.Text, "Fix seen (alpha): `ls 'src/routes/[slug]'`") || hits[0].Why != "cause+project" {
+	if !strings.Contains(hits[0].Lesson.Text, "Fix seen: `ls 'src/routes/[slug]'` (alpha, 2026-09-01).") || hits[0].Why != "cause+project" {
 		t.Errorf("text/why = %q %q", hits[0].Lesson.Text, hits[0].Why)
 	}
 	// before s2's fix, leaving out s1: nothing
@@ -89,15 +89,7 @@ func TestPrefsAndStrictStart(t *testing.T) {
 	}
 }
 
-func TestSentences(t *testing.T) {
-	got := SplitSentences("One.  Two!\n\nThree? four\nfive")
-	want := []string{"One.", "Two!", "Three?", "four", "five"}
-	if !reflect.DeepEqual(got, want) {
-		t.Errorf("split = %q", got)
-	}
-	if n := NormSentence("Use https://x.y/z and /a/b/c 42 times!"); n != "use and N times" {
-		t.Errorf("norm = %q", n)
-	}
+func TestPrefSentencesSkipsNonRules(t *testing.T) {
 	if ps := PrefSentences("/humanizer"); ps != nil {
 		t.Errorf("bare skill call: %v", ps)
 	}

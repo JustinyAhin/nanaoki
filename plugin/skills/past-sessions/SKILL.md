@@ -13,21 +13,22 @@ description: Search the user's past Claude Code and Codex sessions on this machi
 2. Search the current project first, then all projects if the results are thin:
 
    ```sh
-   nanaoki search --project . "stripe billing portal configuration"
-   nanaoki search "stripe billing portal configuration"
+   nanaoki search --paths --project . "stripe billing portal configuration"
+   nanaoki search --paths "stripe billing portal configuration"
    ```
 
 3. Narrow with flags when needed:
    - `--since YYYY-MM-DD`, `--until YYYY-MM-DD` for a time range ("last week", "in October").
    - `--agent claude` or `--agent codex` when the user names the agent.
    - `--raw` for FTS5 syntax: a phrase `"weekly report"`, `AND`, `NOT`, a prefix `deploy*`.
-   - `--limit N` (default 8, at most 2 results per session) and `--format json` for the full fields.
+   - `--limit N` (default 8, one result per session with the count of its other hits) and `--format json` for the full fields.
+   - The current session is left out. `--include-current` keeps it.
 4. Run 2 or 3 searches with other words before you conclude that nothing exists.
 
 ## How to answer
 
 - Answer from the results. Cite each fact with its source: agent, date, project, and session id (the first 8 characters are enough), for example "(codex, 2026-11-03, tangledplot, session 01a1a374)".
-- Results are snippets. To read more, open the cited file line (`~/.codex/...jsonl:LINE` or `~/.claude/projects/...jsonl:LINE`) with a read-only command. Codex files that end in `.zst` need `zstd -dc FILE | sed -n 'LINE p'`.
+- Results are snippets. To read more, open the cited file line that `--paths` shows (`~/.codex/...jsonl:LINE` or `~/.claude/projects/...jsonl:LINE`) with a read-only command. Codex files that end in `.zst` need `zstd -dc FILE | sed -n 'LINE p'`.
 - If the results do not answer the question, say so. Do not fill gaps with guesses.
 - Snippets can hold secrets or personal data from old sessions. Do not copy them into commits, PRs, or files unless the user asks.
 

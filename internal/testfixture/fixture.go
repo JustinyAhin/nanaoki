@@ -1,5 +1,4 @@
-// Package testfixture lays out a fake home folder with synthetic Claude Code and Codex logs for tests.
-// All content is hand-written (internal/ingest/testdata); no real log content.
+// Package testfixture builds a fake home with hand-written synthetic Claude Code and Codex logs (no real log content).
 package testfixture
 
 import (
@@ -13,7 +12,6 @@ import (
 	_ "modernc.org/sqlite"
 )
 
-// Thread ids used by the fixtures.
 const (
 	ClaudeSession = "aaaaaaaa-0000-4000-8000-000000000001"
 	CodexFeb      = "019c0000-0000-7000-8000-00000000000a"

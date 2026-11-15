@@ -11,8 +11,7 @@ import (
 	"github.com/JustinyAhin/nanaoki/internal/rules"
 )
 
-// codexSQLiteRows ports codex_sqlite_rows: threads in thread_history_1.sqlite with no rollout file.
-// The database is opened read-only and immutable.
+// codexSQLiteRows reads the threads in thread_history_1.sqlite that have no rollout file.
 func codexSQLiteRows(p Paths, known map[string]bool, emit func(Row) error) (threads, missing int, err error) {
 	path := filepath.Join(p.CodexDir, "thread_history_1.sqlite")
 	if _, err := os.Stat(path); err != nil {
@@ -120,7 +119,7 @@ func codexSQLiteRows(p Paths, known map[string]bool, emit func(Row) error) (thre
 	return threads, len(miss), nil
 }
 
-// claudeHistoryRows ports claude_history_rows (~/.claude/history.jsonl: prompts and pastes).
+// claudeHistoryRows reads ~/.claude/history.jsonl (prompts and pastes).
 func claudeHistoryRows(p Paths, emit func(Row) error) error {
 	path := filepath.Join(p.ClaudeDir, "history.jsonl")
 	if _, err := os.Stat(path); err != nil {
@@ -162,7 +161,7 @@ func claudeHistoryRows(p Paths, emit func(Row) error) error {
 	return err
 }
 
-// codexHistoryRows ports codex_history_rows (~/.codex/history.jsonl: prompts). sidCwd gives the cwd of a session.
+// codexHistoryRows reads ~/.codex/history.jsonl (prompts). sidCwd gives the cwd of a session.
 func codexHistoryRows(p Paths, sidCwd map[string]string, emit func(Row) error) error {
 	path := filepath.Join(p.CodexDir, "history.jsonl")
 	if _, err := os.Stat(path); err != nil {

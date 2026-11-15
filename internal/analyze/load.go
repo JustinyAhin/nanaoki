@@ -1,4 +1,4 @@
-// Package analyze computes the report sections from the event store.
+// Package analyze computes the report from the event store, with the same rules as the research prototype.
 package analyze
 
 import (
@@ -44,10 +44,8 @@ type Prompt struct {
 // Typed reports whether the human wrote the prompt (not a command call, template or injected text).
 func (p *Prompt) Typed() bool { return p.Origin == rules.OriginTyped }
 
-// Has reports whether prompt rule j matches.
 func (p *Prompt) Has(j int) bool { return p.Rules&(1<<uint(j)) != 0 }
 
-// Data is everything the report needs, loaded once.
 type Data struct {
 	Errs    []*Err
 	OK      map[string][]OK // session key -> sorted by (ts, head)
@@ -231,7 +229,6 @@ func ResolveOrigins(d *Data, msgs []Msg) {
 
 func rawKey(file string, line int64) string { return file + ":" + strconv.FormatInt(line, 10) }
 
-// parFor runs fn(0..n-1) on all CPUs.
 func parFor(n int, fn func(i int)) {
 	w := runtime.NumCPU()
 	var wg sync.WaitGroup
@@ -270,7 +267,7 @@ func cut19(s string) string {
 	return s
 }
 
-// MarkFixed ports mark_fixed: fixed = a later success with the same head in the same session within 30 min.
+// MarkFixed: fixed = a later success with the same head in the same session within 30 min.
 func (d *Data) MarkFixed() {
 	for _, e := range d.Errs {
 		if e.EType == "user_error_paste" {

@@ -1,16 +1,19 @@
-package analyze
+// Package reportview prints the report as text, md or json, apart from analyze so the hook path does not load terminal styling.
+package reportview
 
 import (
 	"encoding/json"
 	"fmt"
 	"io"
 	"strings"
-	"text/tabwriter"
 	"unicode/utf8"
+
+	"github.com/JustinyAhin/nanaoki/internal/analyze"
+	"github.com/JustinyAhin/nanaoki/internal/style"
 )
 
-// Render writes the report as text, md or json.
-func Render(w io.Writer, r *Report, format string) error {
+// Render writes the report as text, md or json. st styles the text format only.
+func Render(w io.Writer, r *analyze.Report, format string, st style.Style) error {
 	switch format {
 	case "json":
 		enc := json.NewEncoder(w)
@@ -18,9 +21,9 @@ func Render(w io.Writer, r *Report, format string) error {
 		enc.SetEscapeHTML(false)
 		return enc.Encode(r)
 	case "md":
-		return renderDoc(w, r, true)
+		return renderDoc(w, r, true, style.Style{})
 	default:
-		return renderDoc(w, r, false)
+		return renderDoc(w, r, false, st)
 	}
 }
 
@@ -82,7 +85,7 @@ func proj(p string) string {
 }
 
 func keyLabel(k string) string {
-	kind, v := splitKey(k)
+	kind, v := analyze.SplitKey(k)
 	if kind == "cause" {
 		return v
 	}
@@ -94,11 +97,12 @@ var sourceName = map[string]string{
 	"codex_rollout": "rollouts", "codex_sqlite": "thread_history sqlite (gap fill)", "codex_history": "history.jsonl (prompts)",
 }
 
-// table writes rows as a Markdown table or as aligned text.
 type table struct {
 	md   bool
+	st   style.Style
 	w    io.Writer
 	rows [][]string
+	flex int // column to cut to the width; -1 = the last
 }
 
 func (t *table) row(cells ...string) { t.rows = append(t.rows, cells) }
@@ -123,36 +127,35 @@ func (t *table) flush() {
 		}
 		fmt.Fprintln(t.w)
 	} else {
-		tw := tabwriter.NewWriter(t.w, 0, 0, 2, ' ', 0)
-		for _, r := range t.rows {
-			fmt.Fprintf(tw, "  %s\n", strings.Join(r, "\t"))
-		}
-		tw.Flush()
+		t.st.Render(t.w, style.Table{Head: t.rows[0], Rows: t.rows[1:], Indent: 2, Flex: t.flex})
 	}
-	t.rows = nil
+	t.rows, t.flex = nil, -1
 }
 
-func renderDoc(w io.Writer, r *Report, md bool) error {
+func renderDoc(w io.Writer, r *analyze.Report, md bool, st style.Style) error {
 	h := func(n int, title string) {
 		if md {
 			fmt.Fprintf(w, "\n## %d. %s\n\n", n, title)
 		} else {
-			fmt.Fprintf(w, "\n%d. %s\n", n, strings.ToUpper(title))
+			fmt.Fprintf(w, "\n%s\n", st.Title(fmt.Sprintf("%d. %s", n, title)))
 		}
 	}
 	p := func(format string, a ...any) {
 		if md {
 			fmt.Fprintf(w, format+"\n\n", a...)
-		} else {
-			fmt.Fprintf(w, "  "+format+"\n", a...)
+			return
+		}
+		for _, l := range st.Wrap(fmt.Sprintf(format, a...), "  ", st.Width) {
+			fmt.Fprintln(w, l)
 		}
 	}
-	t := &table{md: md, w: w}
+	b := st.Bold // headline numbers; a no-op in md and plain text
+	t := &table{md: md, st: st, w: w, flex: -1}
 	c := r.Coverage
 	if md {
 		fmt.Fprintf(w, "# nanaoki report\n\n")
 	} else {
-		fmt.Fprintf(w, "nanaoki report\n")
+		fmt.Fprintf(w, "%s\n", st.Bold("nanaoki report"))
 	}
 	filt := []string{}
 	if r.Filter.Since != "" {
@@ -189,9 +192,13 @@ func renderDoc(w io.Writer, r *Report, md bool) error {
 		p("No filters (--no-filters): every pasted error and every message counts, and the repeated-errors list uses 2+ days.")
 	}
 	p("All counts come from regex rules over local logs (no LLM). Treat them as estimates.")
+	if !md {
+		p("%s", st.Dim("Legend: cause = a known error class; \"...\" = an exact error signature; repeat-after-fix = an error that was already fixed in an earlier session."))
+	}
 
 	h(1, "Coverage")
 	t.row("Agent", "Source", "Sessions", "Events", "Prompts", "Tool errors", "From", "To")
+	t.flex = 1
 	for _, s := range c.Sources {
 		t.row(s.Agent, sourceName[s.Source], num(s.Sessions), num(s.Events), num(s.Prompts), num(s.ToolErrors), day(s.First), day(s.Last))
 	}
@@ -207,7 +214,7 @@ func renderDoc(w io.Writer, r *Report, md bool) error {
 
 	h(2, "Repeated errors")
 	p("%s error keys (cause, or exact signature) occur in 2+ sessions on %d+ days: %s events. Top %d by sessions:",
-		num(r.RepeatedAll.Keys), r.RepeatedAll.MinDays, num(r.RepeatedAll.Events), min(10, len(r.Repeated)))
+		b(num(r.RepeatedAll.Keys)), r.RepeatedAll.MinDays, num(r.RepeatedAll.Events), min(10, len(r.Repeated)))
 	t.row("#", "Sessions", "Days", "Projects", "Events", "First", "Last", "Error")
 	for i, it := range r.Repeated {
 		if i >= 10 {
@@ -223,11 +230,11 @@ func renderDoc(w io.Writer, r *Report, md bool) error {
 		p("Method: fixed split. Errors in TEST (%s to %s) whose cause or signature was fixed in TRAIN (%s to %s).",
 			a.Split.TestStart, a.Split.TestEnd, a.Split.TrainStart, a.Split.TrainEnd)
 		p("%s of %s TEST error episodes (%s) hit a cause or signature that was already fixed in TRAIN. Same project: %s. Other project only: %s.",
-			num(a.Repeats), num(a.Episodes), pct(a.Repeats, a.Episodes), num(a.SameProject), num(a.OtherProject))
+			b(num(a.Repeats)), num(a.Episodes), b(pct(a.Repeats, a.Episodes)), num(a.SameProject), num(a.OtherProject))
 	} else {
 		p("Method: rolling. Each error episode is compared with fixes in any earlier session (all dates). --split gives a fixed TRAIN/TEST split.")
 		p("%s of %s error episodes (%s) hit a cause or signature that was already fixed in an earlier session. Same project: %s. Other project only: %s.",
-			num(a.Repeats), num(a.Episodes), pct(a.Repeats, a.Episodes), num(a.SameProject), num(a.OtherProject))
+			b(num(a.Repeats)), num(a.Episodes), b(pct(a.Repeats, a.Episodes)), num(a.SameProject), num(a.OtherProject))
 	}
 	var parts []string
 	for _, ag := range []string{"claude", "codex"} {
@@ -241,6 +248,7 @@ func renderDoc(w io.Writer, r *Report, md bool) error {
 		p("By agent: %s.", strings.Join(parts, "; "))
 	}
 	t.row("Repeats", "Same proj", "Other proj", "Error", "Earliest fix (session, date, project)")
+	t.flex = 3
 	for i, it := range a.Top {
 		if i >= 10 {
 			break
@@ -252,8 +260,8 @@ func renderDoc(w io.Writer, r *Report, md bool) error {
 
 	tl := r.TimeLost
 	h(4, "Estimated time lost")
-	p("About %.1f h in repeat-after-fix episodes (%s of them have a measurable gap), %.1f h in all error episodes. This is an estimate.",
-		tl.RepeatMinutes/60, num(tl.RepeatEpisodesTimed), tl.AllErrorMinutes/60)
+	p("About %s in repeat-after-fix episodes (%s of them have a measurable gap), %.1f h in all error episodes. This is an estimate.",
+		b(fmt.Sprintf("%.1f h", tl.RepeatMinutes/60)), num(tl.RepeatEpisodesTimed), tl.AllErrorMinutes/60)
 	p("Method: wall time from each error to the next successful call in the same session, only when that success comes within 30 min. User wait time and token cost are not counted.")
 	shown := 0
 	t.row("Hours", "Repeats", "Error")
@@ -328,7 +336,14 @@ func renderDoc(w io.Writer, r *Report, md bool) error {
 		if md {
 			fmt.Fprintf(w, "%d. **%s** for %s (%s): %s Where: %s.\n", i+1, s.Type, lbl, num(s.Count), s.Text, s.Target)
 		} else {
-			fmt.Fprintf(w, "  %d. [%s] %s (%s): %s\n     Where: %s.\n", i+1, s.Type, lbl, num(s.Count), s.Text, s.Target)
+			line := fmt.Sprintf("%d. %s %s (%s): %s", i+1, st.Yellow("["+s.Type+"]"), st.Bold(lbl), num(s.Count), s.Text)
+			for j, l := range st.Wrap(line, "  ", st.Width) {
+				if j > 0 {
+					l = "   " + l
+				}
+				fmt.Fprintln(w, l)
+			}
+			fmt.Fprintf(w, "     %s\n", st.Dim("Where: "+s.Target+"."))
 		}
 	}
 	if md {
@@ -338,8 +353,8 @@ func renderDoc(w io.Writer, r *Report, md bool) error {
 	return nil
 }
 
-func topByMinutes(items []RepeatedItem) []RepeatedItem {
-	out := append([]RepeatedItem(nil), items...)
+func topByMinutes(items []analyze.RepeatedItem) []analyze.RepeatedItem {
+	out := append([]analyze.RepeatedItem(nil), items...)
 	for i := 1; i < len(out); i++ {
 		for j := i; j > 0 && out[j].MinutesLost > out[j-1].MinutesLost; j-- {
 			out[j], out[j-1] = out[j-1], out[j]
@@ -348,8 +363,8 @@ func topByMinutes(items []RepeatedItem) []RepeatedItem {
 	return out
 }
 
-func sortRules(rs []RuleItem) []RuleItem {
-	out := append([]RuleItem(nil), rs...)
+func sortRules(rs []analyze.RuleItem) []analyze.RuleItem {
+	out := append([]analyze.RuleItem(nil), rs...)
 	for i := 1; i < len(out); i++ {
 		for j := i; j > 0 && out[j].Sessions > out[j-1].Sessions; j-- {
 			out[j], out[j-1] = out[j-1], out[j]

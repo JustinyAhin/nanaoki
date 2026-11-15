@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-// Rule is a named regex over user prompts (port of prompt_trends.PREFS / RECALL / MEMORY).
+// Rule is a named regex over user prompts.
 type Rule struct {
 	Key, Kind, Label string
 	Rx               *regexp.Regexp
@@ -35,7 +35,7 @@ var (
 	pastedRx = py(`<pasted_content>.*?</pasted_content>`, "(?s)")
 )
 
-// PromptKeep ports the prompt filter of prompt_trends.load. It returns the stripped text and the dedupe key part.
+// PromptKeep applies the prompt filter. It returns the stripped text and the dedupe key part.
 func PromptKeep(text string) (string, string, bool) {
 	t := Strip(text)
 	if t == "" || (strings.HasPrefix(t, "<") && !strings.HasPrefix(t, "<pasted_content")) || strings.HasPrefix(t, "Call your image_gen") {

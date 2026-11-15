@@ -35,7 +35,7 @@ var (
 	asstTag = []byte(`"type":"assistant"`)
 )
 
-// parseClaude ports claude_file. rel is the path shown in pointers (~/.claude/projects/...).
+// parseClaude: rel is the path shown in pointers (~/.claude/projects/...).
 func parseClaude(path, rel string) ([]Row, error) {
 	sideFile := strings.Contains(path, "/subagents/")
 	pending := map[string]pendingCall{}

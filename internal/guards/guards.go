@@ -11,13 +11,11 @@ import (
 	"strings"
 )
 
-// Decision of a guard.
 const (
 	Warn  = "warn"  // tell the agent and suggest the fixed command; the command still goes to the normal permission flow
 	Block = "block" // deny the command (only guards marked safe: the command fails for certain)
 )
 
-// Finding is one guard result.
 type Finding struct {
 	Guard    string `json:"guard"`
 	Cause    string `json:"cause"` // rules.Lesson id
@@ -57,7 +55,6 @@ func (e *Env) readFile(p string) ([]byte, error) {
 
 func (e *Env) isZsh() bool { return strings.HasSuffix(e.Shell, "zsh") }
 
-// Check runs all guards on one command line.
 func Check(cmd string, e *Env) []Finding {
 	var out []Finding
 	cmds := Parse(cmd)
@@ -88,8 +85,6 @@ func Check(cmd string, e *Env) []Finding {
 	}
 	return out
 }
-
-// ---------- zsh: unquoted "=word" ----------
 
 // zshEq: zsh expands an unquoted word that starts with "=" to the path of that command ("=ls" -> /bin/ls).
 // When no such command exists, zsh stops with "=... not found". Safe to block: the command cannot run.
@@ -128,8 +123,6 @@ func zshEq(src string, cmds []Command, e *Env) (Finding, bool) {
 			"` fails with \"not found\". Quote it.",
 		Fixed: replaceSpans(src, bad, func(w Word) string { return singleQuote(w.Value) }), words: bad}, true
 }
-
-// ---------- zsh: unquoted glob with no match ----------
 
 func globChars(w Word) bool {
 	open := -1
@@ -211,8 +204,6 @@ var assignRx = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_]*=`)
 
 func isAssignment(w Word) bool { return assignRx.MatchString(w.Value) && !w.Quoted[0] }
 
-// ---------- formatter before git commit ----------
-
 // gitSub returns the git subcommand of a simple command (skipping "-C dir" and "-c k=v").
 func gitSub(c Command) (string, string) {
 	ws := c.Words
@@ -237,7 +228,6 @@ func gitSub(c Command) (string, string) {
 	return "", dir
 }
 
-// RepoRoot walks up from dir to the folder that holds .git.
 func RepoRoot(dir string) string {
 	for d := dir; d != "" && d != "/" && d != "."; d = filepath.Dir(d) {
 		if _, err := os.Stat(filepath.Join(d, ".git")); err == nil {
@@ -279,7 +269,6 @@ func FormatScript(root string, e *Env) string {
 	return pm + " run " + name
 }
 
-// FormatRx matches a command that runs a formatter.
 var FormatRx = regexp.MustCompile(`\b(prettier|biome (format|check)|dprint fmt|gofmt|go fmt|ruff format|black)\b|\brun (format|fmt|prettier)\b|\b(bun|pnpm|yarn|npm) (run )?format\b`)
 
 // formatBeforeCommit: the repo has a format script, the session has not run a formatter, and the command is
@@ -328,8 +317,6 @@ func formatBeforeCommit(full string, cmds []Command, e *Env) (Finding, bool) {
 		Message: "This repo has a format script and this session has not run it. Format before commit, or the format check fails.",
 		Fixed:   fs + " && " + strings.TrimSpace(full)}, true
 }
-
-// ---------- pinned Node version ----------
 
 var nodeHeads = map[string]bool{"npm": true, "npx": true, "pnpm": true, "yarn": true, "node": true, "corepack": true}
 
@@ -429,8 +416,6 @@ func NodeMajorFromPath(lookPath func(string) (string, error)) (int, bool) {
 	}
 	return 0, false
 }
-
-// ---------- SSH user ----------
 
 // sshUser: an earlier lesson shows that `ssh HOST` failed and `ssh USER@HOST` fixed it. Warn on `ssh HOST`
 // with no user and suggest the user from the lesson.

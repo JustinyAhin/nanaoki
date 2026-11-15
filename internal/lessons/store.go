@@ -12,7 +12,6 @@ import (
 	"time"
 )
 
-// Store ports lessons.Store: retrieval over one set of lessons.
 type Store struct {
 	Lessons []*Lesson
 	PStacks map[string]map[string]bool
@@ -22,7 +21,6 @@ type Store struct {
 	IDF     map[string]float64
 }
 
-// MinScore is the minimum score for error and question hits.
 const MinScore = 2.0
 
 // NewStore indexes lessons. pstacks are the project stacks known at the store time.
@@ -75,7 +73,6 @@ func Toks(text string) []string {
 	return out
 }
 
-// TokSet returns the unique words from Toks.
 func TokSet(text string) map[string]bool {
 	m := map[string]bool{}
 	for _, t := range Toks(text) {
@@ -100,7 +97,7 @@ func sortedToks(m map[string]bool) []string {
 	return out
 }
 
-// Overlap ports Store.overlap: idf-weighted share of the lesson tokens found in the query.
+// Overlap is the idf-weighted share of the lesson tokens found in the query.
 func (s *Store) Overlap(q map[string]bool, L *Lesson) float64 {
 	if L.toks == nil {
 		L.toks = TokSet(L.Text)
@@ -124,14 +121,13 @@ func (s *Store) Overlap(q map[string]bool, L *Lesson) float64 {
 	return num / den
 }
 
-// Hit is one surfaced lesson.
 type Hit struct {
 	Score  float64 `json:"score"`
 	Why    string  `json:"why"`
 	Lesson *Lesson `json:"lesson"`
 }
 
-// Retrieve ports Store.retrieve for error and question triggers (k lessons with score >= MinScore). For
+// Retrieve returns k lessons with score >= MinScore for error and question triggers. For
 // session_start it returns the plain top k (the pilot rule); use RetrieveStartStrict for the strict rule.
 func (s *Store) Retrieve(tr Trigger, k int) []Hit {
 	type cand struct {
@@ -229,7 +225,7 @@ const (
 	StartK           = 2
 )
 
-// RetrieveStartStrict ports retrieve_start_strict: a pref lesson surfaces at session start only when its text
+// RetrieveStartStrict: a pref lesson surfaces at session start only when its text
 // overlaps the first message (>= 0.25), it comes from this repo or a repo with shared stack signals (node alone
 // does not count), and it was seen in 2+ sessions. Top k.
 func (s *Store) RetrieveStartStrict(tr Trigger, repoStacks func(p string) map[string]bool, k int) []Hit {
@@ -297,7 +293,6 @@ func (s *Store) RetrieveStartStrict(tr Trigger, repoStacks func(p string) map[st
 	return hits
 }
 
-// Render ports render(): one "[Ln] text" line per hit.
 func Render(hits []Hit) string {
 	var b strings.Builder
 	for i, h := range hits {
@@ -308,8 +303,6 @@ func Render(hits []Hit) string {
 	}
 	return b.String()
 }
-
-// ---------- helpers ----------
 
 func sortedKeys(m map[string]bool) []string {
 	out := make([]string, 0, len(m))

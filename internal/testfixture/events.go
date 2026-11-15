@@ -8,7 +8,6 @@ import (
 	"github.com/JustinyAhin/nanaoki/internal/rules"
 )
 
-// Ev is one synthetic event row.
 type Ev struct {
 	Agent, Sid, Project, Ts, Type, Tool, Text, Out string
 	Err                                            bool

@@ -48,8 +48,6 @@ func errPtr(e *Err) Pointer {
 	return Pointer{Agent: e.Agent, Session: e.Sid, Project: e.Project, Ts: e.Ts, RawFile: e.RawFile, RawLine: e.RawLine, EventID: e.ID}
 }
 
-// ---------- report types ----------
-
 type SourceCov struct {
 	Source     string `json:"source"`
 	Agent      string `json:"agent"`
@@ -196,7 +194,6 @@ type Report struct {
 	Validation  *Validation  `json:"validation,omitempty"`
 }
 
-// Options for Build.
 type Options struct {
 	Filter Filter
 	Top    int
@@ -207,7 +204,6 @@ type Options struct {
 	NoFilters bool
 }
 
-// Build computes the report.
 func Build(db *sql.DB, o Options) (*Report, error) {
 	if o.Top <= 0 {
 		o.Top = 10
@@ -232,7 +228,6 @@ func Build(db *sql.DB, o Options) (*Report, error) {
 		mins[x] = episodeMinutes(d, x)
 	}
 
-	// ---------- repeated errors ----------
 	// Spread rule: one burst (a batch run, a fan-out of subagents) puts the same error in many sessions on one
 	// or two days. A key must span 3+ days to be listed. --no-filters keeps the Python rule (2+ days).
 	r.RepeatedAll.MinDays = 3
@@ -244,7 +239,6 @@ func Build(db *sql.DB, o Options) (*Report, error) {
 		r.Repeated = r.Repeated[:o.Top*3]
 	}
 
-	// ---------- repeat-after-fix ----------
 	raf := RAF{Method: "rolling", MethodDetail: "rolling: an error episode (session x cause, or session x exact signature) whose key was fixed in any earlier session, all dates in time order; fixed = a later success with the same command head within 30 min",
 		ByAgent: map[string]AgentSplit{}}
 	rafRows := reps
@@ -555,8 +549,6 @@ func resolvePointers(db *sql.DB, items []RAFItem) error {
 	}
 	return nil
 }
-
-// ---------- coverage ----------
 
 func coverage(db *sql.DB, r *Report, o Options) error {
 	c := &r.Coverage

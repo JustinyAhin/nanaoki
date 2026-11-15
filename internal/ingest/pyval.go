@@ -170,7 +170,7 @@ func dumpStr(b *strings.Builder, s string) {
 	b.WriteByte('"')
 }
 
-// tr ports build_event_store.tr: non-strings are JSON-dumped, then cut to n code points plus '…'.
+// tr: non-strings are JSON-dumped, then cut to n code points plus '…'.
 // The bool result is false when v is None (the Python returns None).
 func tr(v any, n int) (string, bool) {
 	if v == nil {
@@ -208,14 +208,12 @@ func toInt(v any) (int64, bool) {
 	return 0, false
 }
 
-// isoMs ports iso_ms: epoch milliseconds to 2006-01-02T15:04:05.000Z (UTC).
 func isoMs(ms float64) string {
 	us := math.Round(ms * 1000)
 	t := time.UnixMicro(int64(us)).UTC()
 	return t.Format("2006-01-02T15:04:05.000Z")
 }
 
-// blockText ports block_text.
 func blockText(c any) string {
 	switch x := c.(type) {
 	case string:

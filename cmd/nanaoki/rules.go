@@ -13,6 +13,7 @@ import (
 	"github.com/JustinyAhin/nanaoki/internal/lessons"
 	"github.com/JustinyAhin/nanaoki/internal/rules"
 	"github.com/JustinyAhin/nanaoki/internal/rulesuggest"
+	"github.com/JustinyAhin/nanaoki/internal/style"
 )
 
 const rulesUsage = `nanaoki rules: propose rules for CLAUDE.md / AGENTS.md from what you keep typing (print only).
@@ -46,6 +47,7 @@ func runRules(args []string, stdout, stderr io.Writer) error {
 	format := fs.String("format", "text", "")
 	write := fs.Bool("write", false, "")
 	decisions := fs.Bool("decisions", false, "")
+	noColor := fs.Bool("no-color", false, "")
 	before := fs.String("before", "", "")
 	exclSess := fs.String("exclude-session", "", "")
 	cfgPath := fs.String("config", "", "")
@@ -110,11 +112,13 @@ func runRules(args []string, stdout, stderr io.Writer) error {
 		fmt.Fprintln(stdout, "No stable rules to propose.")
 		return nil
 	}
-	fmt.Fprintf(stdout, "Proposed rules (%d). Evidence: sessions, projects, last seen.\n\n", len(pick))
+	sty := style.Detect(stdout, *noColor)
+	fmt.Fprintf(stdout, "%s %s\n\n", sty.Bold(fmt.Sprintf("Proposed rules (%d).", len(pick))), sty.Dim("Evidence: sessions, projects, last seen."))
+	t := style.Table{Head: []string{"Kind", "Sessions", "Projects", "Last", "Rule"}, Indent: 2, Flex: -1}
 	for _, x := range pick {
-		fmt.Fprintf(stdout, "  %-8s %3d sess  %2d proj  %s  %s\n", x.Kind, x.Sessions, len(x.Projects), day10(x.Last),
-			rules.Trunc(strings.Join(strings.Fields(x.Text), " "), 110))
+		t.Rows = append(t.Rows, []string{sty.Yellow(x.Kind), fmt.Sprint(x.Sessions), fmt.Sprint(len(x.Projects)), day10(x.Last), style.OneLine(x.Text)})
 	}
+	sty.Render(stdout, t)
 	paths := ingest.DefaultPaths()
 	var targets [][2]string
 	if *project {
@@ -123,7 +127,7 @@ func runRules(args []string, stdout, stderr io.Writer) error {
 		targets = [][2]string{{filepath.Join(paths.ClaudeDir, "CLAUDE.md"), "~/.claude/CLAUDE.md"},
 			{filepath.Join(paths.CodexDir, "AGENTS.md"), "~/.codex/AGENTS.md"}}
 	}
-	fmt.Fprintln(stdout, "\nProposed diff (not applied; nanaoki never writes these files):")
+	fmt.Fprintln(stdout, "\n"+sty.Bold("Proposed diff")+sty.Dim(" (not applied; nanaoki never writes these files):"))
 	for _, t := range targets {
 		d, n := rulesuggest.Diff(t[0], t[1], pick)
 		if n == 0 {
@@ -131,7 +135,19 @@ func runRules(args []string, stdout, stderr io.Writer) error {
 			continue
 		}
 		fmt.Fprintln(stdout)
-		fmt.Fprint(stdout, d)
+		for _, l := range strings.SplitAfter(d, "\n") {
+			switch {
+			case strings.HasPrefix(l, "+++") || strings.HasPrefix(l, "---"):
+				l = sty.Bold(strings.TrimSuffix(l, "\n")) + "\n"
+			case strings.HasPrefix(l, "+"):
+				l = sty.Green(strings.TrimSuffix(l, "\n")) + "\n"
+			case strings.HasPrefix(l, "-"):
+				l = sty.Red(strings.TrimSuffix(l, "\n")) + "\n"
+			case strings.HasPrefix(l, "@@"):
+				l = sty.Cyan(strings.TrimSuffix(l, "\n")) + "\n"
+			}
+			fmt.Fprint(stdout, l)
+		}
 	}
 	return nil
 }

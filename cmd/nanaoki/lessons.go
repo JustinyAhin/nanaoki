@@ -9,10 +9,12 @@ import (
 	"os"
 	"time"
 
+	"github.com/JustinyAhin/nanaoki/internal/anon"
 	"github.com/JustinyAhin/nanaoki/internal/guards"
 	"github.com/JustinyAhin/nanaoki/internal/ingest"
 	"github.com/JustinyAhin/nanaoki/internal/lessons"
 	"github.com/JustinyAhin/nanaoki/internal/rules"
+	"github.com/JustinyAhin/nanaoki/internal/style"
 )
 
 const lessonsUsage = `nanaoki lessons: the rolling lesson store (local, no LLM, no network).
@@ -23,8 +25,8 @@ Usage:
   nanaoki lessons export [--dir DIR] [--project] [--index PATH]
         write one markdown file per confirmed lesson (default dir ~/.local/share/nanaoki/lessons;
         --project: lessons of the project in the current folder, into ./.lessons)
-  nanaoki lessons list   [--index PATH] [--all]
-        print the confirmed lessons (--all: candidates too)
+  nanaoki lessons list   [--index PATH] [--all] [--anon] [--no-color]
+        print the confirmed lessons (--all: candidates too; --anon: hide project names and file paths)
   nanaoki lessons query  --config FILE [--db PATH] < triggers.jsonl
         eval adapter: for each trigger line {id, trigger, t, exclude_session, mode, k}, print the lessons
         known before t (mode retrieve or strict)
@@ -60,6 +62,8 @@ func runLessons(args []string, stdin io.Reader, stdout, stderr io.Writer) error 
 	dir := fs.String("dir", "", "")
 	project := fs.Bool("project", false, "")
 	all := fs.Bool("all", false, "")
+	noColor := fs.Bool("no-color", false, "")
+	anonF := fs.Bool("anon", false, "")
 	if err := fs.Parse(args); err != nil {
 		if err == flag.ErrHelp {
 			return nil
@@ -114,13 +118,30 @@ func runLessons(args []string, stdin io.Reader, stdout, stderr io.Writer) error 
 		}
 		ls := append([]*lessons.Lesson(nil), ix.Lessons...)
 		lessons.SortLessons(ls)
+		sty := style.Detect(stdout, *noColor)
+		var an *anon.Anon
+		if *anonF {
+			var known []string
+			for _, L := range ls {
+				for p := range L.Projects {
+					known = append(known, p)
+				}
+			}
+			an = anon.New(known)
+		}
+		t := style.Table{Head: []string{"ID", "Status", "Sessions", "Lesson"}, Flex: -1}
 		for _, L := range ls {
 			st := lessons.StatusOf(L)
 			if st != "confirmed" && !*all {
 				continue
 			}
-			fmt.Fprintf(stdout, "%-17s %-9s %3d sess  %s\n", L.ID, st, L.Sessions, rules.Trunc(L.Text, 140))
+			stc := sty.Dim(st)
+			if st == "confirmed" {
+				stc = sty.Green(st)
+			}
+			t.Rows = append(t.Rows, []string{sty.Dim(L.ID), stc, fmt.Sprint(L.Sessions), style.OneLine(an.Lesson(L.Text))})
 		}
+		sty.Render(stdout, t)
 		return nil
 	}
 	return fmt.Errorf("unknown lessons command %q\n\n%s", sub, lessonsUsage)
@@ -191,7 +212,7 @@ func lessonsQuery(dbPath, cfgPath string, stdin io.Reader, stdout io.Writer) err
 			}
 			continue
 		}
-		// trigger stacks = session stacks + project stacks known before t (run.py c_family_hits)
+		// trigger stacks = session stacks + project stacks known before t
 		snap := r.Snapshot(q.Trigger, q.T, q.ExcludeSession)
 		var hits []lessons.Hit
 		if q.Mode == "strict" {

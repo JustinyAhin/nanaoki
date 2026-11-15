@@ -7,7 +7,7 @@ import (
 	"github.com/JustinyAhin/nanaoki/internal/rules"
 )
 
-// promptRules ports the rule counts of prompt_trends.py (restated preferences, recall requests, memory phrases).
+// promptRules counts the rules of prompt_trends.py (restated preferences, recall requests, memory phrases).
 // With typedOnly, Msgs, Sessions, Days, First and Last count only typed prompts; All* and ByOrigin count all.
 func promptRules(ps []*Prompt, f Filter, typedOnly bool) []RuleItem {
 	var out []RuleItem
@@ -202,6 +202,8 @@ func suggest(r *Report, top int) []Suggestion {
 	return out
 }
 
+func SplitKey(k string) (string, string) { return splitKey(k) }
+
 func splitKey(k string) (string, string) {
 	for i := 0; i < len(k); i++ {
 		if k[i] == ':' {
@@ -210,8 +212,6 @@ func splitKey(k string) (string, string) {
 	}
 	return "", k
 }
-
-// ---------- validation mode (TRAIN/TEST numbers of repeat_after_fix.py and prompt_trends.py) ----------
 
 type Validation struct {
 	Split       Split                     `json:"split"`

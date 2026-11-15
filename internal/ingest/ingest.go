@@ -15,7 +15,6 @@ import (
 	"github.com/JustinyAhin/nanaoki/internal/rules"
 )
 
-// Options for Run.
 type Options struct {
 	DB      string
 	Paths   Paths
@@ -24,7 +23,6 @@ type Options struct {
 	Log     io.Writer // progress lines; nil = quiet
 }
 
-// Stats is what one ingest did.
 type Stats struct {
 	FilesSeen, FilesParsed, FilesUnchanged, FilesGone int
 	RowsInserted, RowsDeduped, RowsDerived            int
@@ -68,7 +66,6 @@ func Run(o Options) (Stats, error) {
 		}
 	}
 
-	// ---- which files changed ----
 	files := Discover(o.Paths)
 	st.FilesSeen = len(files)
 	type known struct {
@@ -136,7 +133,6 @@ func Run(o Options) (Stats, error) {
 		}
 	}
 
-	// ---- dedupe keys of the rows we keep ----
 	seen := map[[16]byte]struct{}{}
 	if !fresh {
 		rs, err := tx.Query(`select dkey from events where dkey is not null`)
@@ -154,7 +150,7 @@ func Run(o Options) (Stats, error) {
 		rs.Close()
 	}
 
-	// ---- parse in parallel, write in file order ----
+	// Parse in parallel, write in file order.
 	ins := newInserter(tx)
 	jobs := make(chan int)
 	results := make(chan result, o.Workers*2)
@@ -253,7 +249,6 @@ func Run(o Options) (Stats, error) {
 		}
 	}
 
-	// ---- derived sources: SQLite gap fill, prompt histories ----
 	knownT := map[string]bool{}
 	sidCwd := map[string]string{}
 	rs2, err := tx.Query(`select session_id, cwd from events where agent='codex' and source='codex_rollout' and session_id is not null order by id`)

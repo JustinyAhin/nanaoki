@@ -56,7 +56,7 @@ func CauseOfEvent(eventType, text, output string) string {
 	return CauseOf(cmd, output)
 }
 
-// CauseOf ports causes.cause_of: the first rule that matches the output (or the command, for rules with a
+// CauseOf returns the first rule that matches the output (or the command, for rules with a
 // command regex) wins.
 func CauseOf(cmd, out string) string {
 	for _, c := range causes {
@@ -70,7 +70,6 @@ func CauseOf(cmd, out string) string {
 	return ""
 }
 
-// CauseIDs lists the cause ids in table order.
 func CauseIDs() []string {
 	ids := make([]string, len(causes))
 	for i, c := range causes {

@@ -23,9 +23,15 @@ Go CLI and agent plugin. It reads Claude Code and Codex history on the user's ma
 
 ## Tests
 
+- Test only critical behavior that can break silently: parsers of each log format, the counting logic behind the report numbers, guards that block commands, hook fail-open, redaction.
+- Do not add tests for obvious code, simple getters, formatting, or code that a type check already covers. No test only to raise coverage.
 - Use small synthetic fixtures in `testdata/`. Never copy real session content into the repo.
-- Add a test for each new parser format, guard, cause and filter.
 - A change to counting logic must keep the documented numbers reachable, or explain the change.
+
+## Comments
+
+- Comment only when the code cannot show the reason: a non-obvious rule, a format quirk, a trade-off, a workaround.
+- Do not restate what the code does. Do not add section banners or comments on obvious lines.
 
 ## Releases
 

@@ -1,6 +1,4 @@
-// Package hook answers Claude Code and Codex lifecycle hooks: guards before a shell command, matching lessons
-// after a failure, and the strict session-start lessons at the first prompt. It fails open: on any error it
-// prints nothing (the agent goes on as if there were no hook) and logs the error.
+// Package hook answers Claude Code and Codex hooks. It fails open: on any error it prints nothing and logs the error.
 package hook
 
 import (
@@ -32,7 +30,6 @@ type Input struct {
 	Error         string          `json:"error"`
 }
 
-// Limits of what one hook call shows.
 const (
 	MaxFailureLessons = 3
 	MaxStartLessons   = lessons.StartK
@@ -47,7 +44,6 @@ type Deps struct {
 	Now      func() time.Time
 }
 
-// DefaultDeps reads the index from disk and the real environment.
 func DefaultDeps() Deps {
 	return Deps{
 		Index:    func() (*lessons.Index, error) { return lessons.LoadIndex(lessons.IndexPath()) },
@@ -57,7 +53,6 @@ func DefaultDeps() Deps {
 	}
 }
 
-// RealEnv is the guard environment of this machine.
 func RealEnv(cwd string, ix *lessons.Index) *guards.Env {
 	sh := os.Getenv("NANAOKI_SHELL")
 	if sh == "" {
@@ -77,7 +72,6 @@ var eventNames = map[string]string{
 	"post-tool-use": "PostToolUse", "post-tool-use-failure": "PostToolUseFailure",
 }
 
-// EventName maps a CLI argument or a hook_event_name to the hook_event_name.
 func EventName(s string) string {
 	if n, ok := eventNames[s]; ok {
 		return n
@@ -97,7 +91,6 @@ func context(event, text string) Output {
 	return Output{"hookSpecificOutput": map[string]any{"hookEventName": event, "additionalContext": text}}
 }
 
-// Handle answers one hook call. agent is "claude" or "codex".
 func Handle(agent, event string, in Input, d Deps) (Output, error) {
 	if event == "" {
 		event = EventName(in.HookEventName)
@@ -299,8 +292,6 @@ func logShown(d Deps, agent string, in Input, event string, hits []lessons.Hit) 
 	_ = lessons.AppendShown(d.ShownLog, es)
 }
 
-// ---------- per-session state ----------
-
 type state struct {
 	path      string
 	Started   bool            `json:"started"`
@@ -350,8 +341,6 @@ func (st *state) save() {
 	_ = os.WriteFile(st.path, b, 0o644)
 }
 
-// ---------- node version cache ----------
-
 func cachedNodeMajor() (int, bool) {
 	cache := filepath.Join(lessons.DefaultDir(), "node-version.json")
 	p := os.Getenv("PATH")
@@ -373,7 +362,6 @@ func cachedNodeMajor() (int, bool) {
 
 var lookPath = exec.LookPath
 
-// LogError appends one line to hook.log.
 func LogError(event string, err any) {
 	p := filepath.Join(lessons.DefaultDir(), "hook.log")
 	_ = os.MkdirAll(filepath.Dir(p), 0o755)

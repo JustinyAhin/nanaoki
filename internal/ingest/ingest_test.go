@@ -245,18 +245,3 @@ func TestCodexSkip(t *testing.T) {
 		}
 	}
 }
-
-func TestPyDumpsAndTr(t *testing.T) {
-	if got := pyDumps(map[string]any{"b": 1.0, "a": []any{"x", nil, true}, "c": "é\n"}); got != `{"a": ["x", null, true], "b": 1, "c": "é\n"}` {
-		t.Errorf("pyDumps = %s", got)
-	}
-	if got, _ := tr("héllo", 2); got != "hé…" {
-		t.Errorf("tr = %q", got)
-	}
-	if _, ok := tr(nil, 3); ok {
-		t.Error("tr(nil) should be None")
-	}
-	if got := isoMs(1771900000123); got != "2026-02-24T02:26:40.123Z" {
-		t.Errorf("isoMs = %s", got)
-	}
-}

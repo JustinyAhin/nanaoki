@@ -36,7 +36,6 @@ func (p Paths) Rel(path string) string {
 	return path
 }
 
-// SrcFile is one transcript or rollout file.
 type SrcFile struct {
 	Path  string
 	Kind  string // "claude" or "codex"

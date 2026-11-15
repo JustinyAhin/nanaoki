@@ -43,7 +43,6 @@ func Global(L *Lesson) bool {
 // ShownLogPath is the log of lessons the hooks showed (one JSON line each).
 func ShownLogPath() string { return filepath.Join(DefaultDir(), "shown.jsonl") }
 
-// ShownEntry is one line of the shown log.
 type ShownEntry struct {
 	Ts      string `json:"ts"`
 	Lesson  string `json:"lesson"`
@@ -103,14 +102,12 @@ func readShown(path string) map[string]shownStat {
 	return out
 }
 
-// Score is the per-lesson proof line.
 type Score struct {
 	Shown        int
 	RepeatsAfter int // episodes with this key that started after the first time a hook showed the lesson
 	LastSeen     string
 }
 
-// ScoreOf computes the score from the shown log stats.
 func scoreOf(L *Lesson, sh shownStat) Score {
 	s := Score{Shown: sh.n, LastSeen: day(L.LastTs)}
 	if sh.first != "" {
@@ -130,7 +127,6 @@ func day(ts string) string {
 	return ts
 }
 
-// ExportOptions selects what to write.
 type ExportOptions struct {
 	Dir      string // target folder ("" = default)
 	Project  bool   // project lessons of Cwd into Cwd/.lessons
@@ -138,7 +134,6 @@ type ExportOptions struct {
 	ShownLog string
 }
 
-// ExportResult counts files.
 type ExportResult struct {
 	Dir                         string
 	Written, Retired, Unchanged int
@@ -203,7 +198,6 @@ func q(s string) string {
 	return strings.TrimSuffix(b.String(), "\n")
 }
 
-// HomeTilde shows the home folder as ~.
 func HomeTilde(p string) string {
 	if h, err := os.UserHomeDir(); err == nil && h != "" && strings.HasPrefix(p, h+"/") {
 		return "~" + p[len(h):]

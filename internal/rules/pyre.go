@@ -1,5 +1,4 @@
-// Package rules holds the deterministic rules ported from the Python reference
-// .
+// Package rules holds the deterministic rules ported from the Python reference in scripts/.
 package rules
 
 import (

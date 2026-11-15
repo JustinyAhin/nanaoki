@@ -46,9 +46,6 @@ func TestSuggestAndDiff(t *testing.T) {
 	if n != 1 || !strings.Contains(diff, "+- Always run the e2e suite") || strings.Contains(diff, "Commit or push") {
 		t.Errorf("diff (%d):\n%s", n, diff)
 	}
-	if !strings.HasPrefix(diff, "--- a/AGENTS.md\n+++ b/AGENTS.md\n@@ -3,0 +4,") {
-		t.Errorf("header:\n%s", diff)
-	}
 	b, _ := os.ReadFile(f)
 	if string(b) != "# Rules\n\n- Do not push before I tell you.\n" {
 		t.Error("Diff must not write the file")

@@ -11,10 +11,8 @@ import (
 
 const day = "2006-01-02"
 
-// relRe matches a relative span: 30d, 4w, 3m, 1y.
 var relRe = regexp.MustCompile(`^(\d+)([dwmy])$`)
 
-// shift returns t moved back by n units (d, w, m, y).
 func shift(t time.Time, n int, unit string) time.Time {
 	switch unit {
 	case "d":
@@ -28,7 +26,6 @@ func shift(t time.Time, n int, unit string) time.Time {
 	}
 }
 
-// resolveDate accepts YYYY-MM-DD, "today", or a relative span ("30d", "4w", "3m", "1y").
 // A span means "that long ago": with --since 30d the window covers the last 30 days, today included.
 func resolveDate(s string, now time.Time) (string, error) {
 	s = strings.TrimSpace(strings.ToLower(s))
@@ -51,7 +48,6 @@ func resolveDate(s string, now time.Time) (string, error) {
 	return shift(now, n, m[2]).AddDate(0, 0, 1).Format(day), nil
 }
 
-// historyRange returns the first and last event day in the store.
 func historyRange(db *sql.DB) (string, string, error) {
 	var lo, hi sql.NullString
 	if err := db.QueryRow(`select min(substr(ts,1,10)), max(substr(ts,1,10)) from events where ts is not null and ts != ''`).Scan(&lo, &hi); err != nil {

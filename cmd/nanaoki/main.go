@@ -1,5 +1,4 @@
 // nanaoki reads local Claude Code and Codex history and reports where agents repeat mistakes.
-// No LLM, no network.
 package main
 
 import (
@@ -12,7 +11,10 @@ import (
 	"time"
 
 	"github.com/JustinyAhin/nanaoki/internal/analyze"
+	"github.com/JustinyAhin/nanaoki/internal/anon"
 	"github.com/JustinyAhin/nanaoki/internal/ingest"
+	"github.com/JustinyAhin/nanaoki/internal/reportview"
+	"github.com/JustinyAhin/nanaoki/internal/style"
 )
 
 const usage = `nanaoki: find where your coding agents repeat mistakes (local only, no LLM, no network).
@@ -45,6 +47,8 @@ Flags:
   --rebuild          ingest: drop the store and read everything again
   --workers N        ingest: parallel parsers (default: CPU count)
   --quiet            ingest: no progress lines
+  --anon             hide project names, session ids, home paths and private data (to share the report)
+  --no-color         no colors (also: NO_COLOR=1; pipes get plain text)
 
 Reads (read-only): $CODEX_HOME or ~/.codex (sessions, archived_sessions, thread_history_1.sqlite,
 history.jsonl) and $CLAUDE_CONFIG_DIR or ~/.claude (projects/**, history.jsonl, settings.json).
@@ -103,6 +107,8 @@ func run(args []string, stdout, stderr io.Writer) error {
 	quiet := fs.Bool("quiet", false, "")
 	split := fs.String("split", "", "")
 	noFilters := fs.Bool("no-filters", false, "")
+	anonF := fs.Bool("anon", false, "")
+	noColor := fs.Bool("no-color", false, "")
 	if err := fs.Parse(args); err != nil {
 		if err == flag.ErrHelp {
 			return nil
@@ -169,5 +175,12 @@ func run(args []string, stdout, stderr io.Writer) error {
 	if err != nil {
 		return err
 	}
-	return analyze.Render(stdout, r, *format)
+	if *anonF {
+		known, err := analyze.KnownProjects(store)
+		if err != nil {
+			return err
+		}
+		r.Anonymize(anon.New(known))
+	}
+	return reportview.Render(stdout, r, *format, style.Detect(stdout, *noColor))
 }

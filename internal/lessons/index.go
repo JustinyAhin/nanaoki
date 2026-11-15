@@ -27,10 +27,8 @@ func DefaultDir() string {
 	return filepath.Join(home, ".local", "share", "nanaoki")
 }
 
-// IndexPath is the default index file.
 func IndexPath() string { return filepath.Join(DefaultDir(), "lessons.gob") }
 
-// BuildIndex materializes every lesson known now.
 func (r *Rolling) BuildIndex() *Index {
 	all := r.All("")
 	st := NewStore(all, r.pstacksAt(tsMax))
@@ -55,7 +53,7 @@ func (r *Rolling) BuildIndex() *Index {
 	return ix
 }
 
-// SSHUsersAt ports the "fix seen" rule to SSH: a fixed episode (fix before t, not in session excl) whose
+// SSHUsersAt applies the "fix seen" rule to SSH: a fixed episode (fix before t, not in session excl) whose
 // failed command is `ssh HOST` and whose fix is `ssh USER@HOST`. The latest fix wins.
 func (r *Rolling) SSHUsersAt(t, excl string) map[string]string {
 	out := map[string]string{}
@@ -96,7 +94,6 @@ func (ix *Index) Save(path string) error {
 	return os.Rename(tmp, path)
 }
 
-// LoadIndex reads an index file.
 func LoadIndex(path string) (*Index, error) {
 	f, err := os.Open(path)
 	if err != nil {
@@ -121,12 +118,10 @@ func (ix *Index) Store() *Store {
 	return s
 }
 
-// RepoStacksFn returns the repo stack lookup for strict session-start retrieval.
 func (ix *Index) RepoStacksFn() func(string) map[string]bool {
 	return func(p string) map[string]bool { return set(ix.RepoStacks[p]) }
 }
 
-// ByID returns lessons by id.
 func (ix *Index) ByID() map[string]*Lesson {
 	m := make(map[string]*Lesson, len(ix.Lessons))
 	for _, L := range ix.Lessons {

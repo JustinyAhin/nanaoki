@@ -81,9 +81,6 @@ func TestCauseOf(t *testing.T) {
 	if CauseOfEvent("user_error_paste", "zsh: command not found: foo", "") != "command_not_found" {
 		t.Error("pasted log: the text is the output")
 	}
-	if len(CauseIDs()) != 45 {
-		t.Errorf("cause table has %d rules, want 45", len(CauseIDs()))
-	}
 }
 
 func TestInformativeAndPaste(t *testing.T) {

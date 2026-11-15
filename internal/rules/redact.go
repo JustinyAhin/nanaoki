@@ -11,7 +11,7 @@ import (
 	"unicode/utf8"
 )
 
-// Redaction for lesson text: secrets, tokens, emails, phone numbers and home paths.
+// Redaction for lesson text. It must match the research prototype, or the eval numbers drift.
 // The lookbehinds and the lookahead of the Python patterns are ported by hand (RE2 has none).
 
 var baseRed = []struct {
@@ -141,7 +141,6 @@ var (
 	namesOK bool
 )
 
-// SetNames replaces the list of private names to redact.
 func SetNames(names []string) {
 	namesMu.Lock()
 	defer namesMu.Unlock()
@@ -209,7 +208,7 @@ func names() *regexp.Regexp {
 	return namesRx
 }
 
-// Redact ports privacy.redact(s, limit): secrets, emails, phones, IPs, handles, greetings with a name, the
+// Redact removes secrets, emails, phones, IPs, handles, greetings with a name, the
 // home folder and private names. limit > 0 cuts to limit code points and adds "…".
 func Redact(s string, limit int) string {
 	s = baseRedact(s)

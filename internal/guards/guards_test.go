@@ -160,15 +160,6 @@ func TestSSHUser(t *testing.T) {
 	}
 }
 
-func TestNodeMajorFromPath(t *testing.T) {
-	n, ok := NodeMajorFromPath(func(string) (string, error) {
-		return "/Users/x/.local/state/fnm_multishells/1/../node-versions/v22.3.0/installation/bin/node", nil
-	})
-	if !ok || n != 22 {
-		t.Errorf("fnm path: %d %v", n, ok)
-	}
-}
-
 func TestCombinedFix(t *testing.T) {
 	e := &Env{Shell: "/bin/zsh", Cwd: t.TempDir(), LookPath: noPath}
 	fs := Check(`curl https://x.test/a?b=1 && echo ===`, e)

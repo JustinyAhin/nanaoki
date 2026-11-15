@@ -25,7 +25,6 @@ var (
 	shellNames = map[string]bool{"exec_command": true, "shell": true, "shell_command": true, "local_shell_call": true, "container.exec": true}
 )
 
-// ThreadIDFromName returns the thread id in a rollout file name, or "".
 func ThreadIDFromName(path string) string {
 	if m := uuidRe.FindStringSubmatch(filepath.Base(path)); m != nil {
 		return m[1]
@@ -91,7 +90,7 @@ func codexSkip(line []byte) bool {
 	return !callTypes[pt] && !outTypes[pt]
 }
 
-// parseCodex ports codex_file. rel is the path shown in pointers (~/.codex/...).
+// parseCodex: rel is the path shown in pointers (~/.codex/...).
 func parseCodex(path, rel string, dec *zstd.Decoder) ([]Row, error) {
 	sid := ThreadIDFromName(path)
 	var cwd string
@@ -176,7 +175,6 @@ func parseCodex(path, rel string, dec *zstd.Decoder) ([]Row, error) {
 		evTypes[str(x.p["type"])] = true
 	}
 
-	// messages
 	if icTypes["UserMessage"] || icTypes["AgentMessage"] {
 		for _, x := range ic {
 			it := str(x.p["type"])
@@ -227,7 +225,6 @@ func parseCodex(path, rel string, dec *zstd.Decoder) ([]Row, error) {
 		}
 	}
 
-	// commands
 	switch {
 	case icTypes["CommandExecution"]:
 		for _, x := range ic {
@@ -303,7 +300,6 @@ func parseCodex(path, rel string, dec *zstd.Decoder) ([]Row, error) {
 		}
 	}
 
-	// MCP
 	if icTypes["McpToolCall"] {
 		for _, x := range ic {
 			if str(x.p["type"]) == "McpToolCall" {
@@ -326,7 +322,6 @@ func parseCodex(path, rel string, dec *zstd.Decoder) ([]Row, error) {
 		}
 	}
 
-	// file changes
 	if icTypes["FileChange"] {
 		for _, x := range ic {
 			if str(x.p["type"]) == "FileChange" {
@@ -441,7 +436,7 @@ func mcpRow(b base, server, tool any, status string, res any, errField any) Row 
 	return r.finish()
 }
 
-// outText ports out_text: a JSON string {"output": .., "metadata": {"exit_code": ..}} or plain text.
+// outText reads a JSON string {"output": .., "metadata": {"exit_code": ..}} or plain text.
 func outText(o any) (string, any) {
 	if s, ok := o.(string); ok {
 		var j any

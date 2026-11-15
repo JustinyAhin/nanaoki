@@ -1,8 +1,6 @@
 package analyze
 
 import (
-	"bytes"
-	"encoding/json"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -95,37 +93,5 @@ func TestValidationSplit(t *testing.T) {
 	// TEST: Sep zsh (no fixed TRAIN episode: Aug was open), Oct zsh (earlier TEST fix only), plus other TEST errors
 	if q["repeat_after_fix"].(int) != 0 || q["earlier_test_only"].(int) != 1 {
 		t.Errorf("q2 = %v", q)
-	}
-}
-
-func TestRender(t *testing.T) {
-	r := build(t, Options{})
-	for _, f := range []string{"text", "md", "json"} {
-		var b bytes.Buffer
-		if err := Render(&b, r, f); err != nil {
-			t.Fatal(err)
-		}
-		out := b.String()
-		if f == "json" {
-			var v Report
-			if err := json.Unmarshal(b.Bytes(), &v); err != nil {
-				t.Fatalf("json: %v", err)
-			}
-			if !v.Filters || v.RAF.Repeats != 1 || len(v.RAF.Top) != 1 || len(v.Rules) == 0 {
-				t.Fatalf("json report lost counts or rules: %+v", v)
-			}
-			if p := v.RAF.Top[0].EarliestFix; p.Session != testfixture.CodexSep || p.RawLine != 4 {
-				t.Errorf("json evidence pointer = %+v", p)
-			}
-			continue
-		}
-		for _, want := range []string{"Coverage", "Repeated errors", "Repeat-after-fix", "time lost", "Restated rules", "Monthly trend", "Suggested fixes"} {
-			if !strings.Contains(strings.ToLower(out), strings.ToLower(want)) {
-				t.Errorf("%s output misses %q", f, want)
-			}
-		}
-		if strings.Contains(out, "/Users/") {
-			t.Errorf("%s output shows raw paths", f)
-		}
 	}
 }

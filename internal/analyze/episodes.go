@@ -18,7 +18,7 @@ type Episode struct {
 // KeyID is "cause:<id>" or "sig:<signature>".
 func (x *Episode) KeyID() string { return x.Kind + ":" + x.Key }
 
-// Episodes ports repeat_after_fix.episodes. errs must be in ts order.
+// Episodes needs errs in ts order.
 func Episodes(errs []*Err) []*Episode {
 	idx := map[string]*Episode{}
 	var out []*Episode
@@ -68,7 +68,6 @@ type Repeat struct {
 	PriorProjects, PriorSessions           int
 }
 
-// Matched reports a repeat-after-fix.
 func (r *Repeat) Matched() bool { return r.MatchSig || r.MatchCause }
 
 func matchRow(x *Episode, mAny []*Episode) Repeat {
@@ -158,7 +157,6 @@ type Split struct {
 	TestEnd    string `json:"test_end"`
 }
 
-// Of ports common.split_of.
 func (s Split) Of(ts string) string {
 	d := ts
 	if len(d) > 10 {

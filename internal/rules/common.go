@@ -5,7 +5,6 @@ import (
 	"strings"
 )
 
-// Project maps a cwd to a project name (port of common.project).
 func Project(cwd string) string {
 	if cwd == "" {
 		return "?"
@@ -31,8 +30,6 @@ func Project(cwd string) string {
 	return parts[len(parts)-1]
 }
 
-// ---------- error signatures ----------
-
 var KEY = py(`(error|failed|failure|cannot|can\'t|not found|denied|refused|invalid|unknown|missing|no such|`+
 	`unable|timed? ?out|exception|fatal|forbidden|unauthori[sz]ed|not allowed|requires|blocked|`+
 	`expected|undefined|conflict|rejected|not permitted|ENOENT|EACCES|429|401|403|404|500|502|503)`, "(?i)")
@@ -50,7 +47,6 @@ var (
 	wsRx    = py(`\s+`, "")
 )
 
-// Norm normalizes an error line (port of common.norm).
 func Norm(s string) string {
 	s = ansiRx.ReplaceAllLiteralString(s, "")
 	s = urlRx.ReplaceAllLiteralString(s, "<url>")
@@ -63,7 +59,7 @@ func Norm(s string) string {
 	return Trunc(s, 140)
 }
 
-// Signature returns the normalized first error-like line (port of common.signature).
+// Signature returns the normalized first error-like line.
 func Signature(text string) string {
 	var lines []string
 	for _, l := range Splitlines(text) {
@@ -82,8 +78,6 @@ func Signature(text string) string {
 	return "<empty>"
 }
 
-// ---------- command classes ----------
-
 var (
 	testRx = py(`\b(vitest|jest|pytest|playwright test|bun test|(npm|pnpm|yarn|bun)( run)? test\b|test:(unit|e2e|int)|`+
 		`go test|cargo test|phpunit|pest\b|rspec)`, "(?i)")
@@ -96,7 +90,6 @@ var (
 	prRx     = py(`\bgh pr (create|edit)\b`, "")
 )
 
-// CommandClass ports common.command_class.
 func CommandClass(c string) string {
 	switch {
 	case commitRx.MatchString(c):
@@ -115,7 +108,6 @@ func CommandClass(c string) string {
 	return ""
 }
 
-// EventTypeForCall ports common.event_type_for_call.
 func EventTypeForCall(cmd string, isError bool) string {
 	if k := CommandClass(cmd); k != "" {
 		return k
@@ -125,8 +117,6 @@ func EventTypeForCall(cmd string, isError bool) string {
 	}
 	return "tool_call"
 }
-
-// ---------- paste detection (build_event_store.paste_error_rows) ----------
 
 var (
 	pasteLineRx = py(`(error|failed|exception|exit|HTTP \d{3}|fatal)`, "(?i)")
@@ -158,13 +148,10 @@ func PasteError(text string) (string, string, bool) {
 	return strings.Join(n8, "\n"), sig, true
 }
 
-// ---------- repeat_after_fix helpers ----------
-
 var genericSigRx = py(`^(<empty>|<path>|<q>.*|\{|---|N.*|✓ Done|[^a-zA-Z]*)$|^(const|let|var|import|export|return|type|if|for|async|await|function)\b|`+
 	`=>|^[\w.]+\($|throw new Error\(<q>\)|^\W|^(Checking formatting|Command:|COMMAND PID)`, "")
 var word3Rx = regexp.MustCompile(`[A-Za-z]{3,}`)
 
-// Informative ports repeat_after_fix.informative.
 func Informative(sig string) bool {
 	return sig != "" && !genericSigRx.MatchString(sig) && len(word3Rx.FindAllStringIndex(sig, -1)) >= 3
 }
@@ -178,7 +165,7 @@ var (
 		"python3": true, "python": true, "node": true, "git": true, "gh": true}
 )
 
-// Head ports repeat_after_fix.head: the command head used to match a later success.
+// Head returns the command head used to match a later success.
 func Head(tool, cmd string) string {
 	if tool != "" && tool != "shell" && tool != "Bash" {
 		return tool

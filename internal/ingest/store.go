@@ -43,7 +43,6 @@ func DefaultDB() string {
 	return filepath.Join(home, ".local", "share", "nanaoki", "events.db")
 }
 
-// OpenStore opens (and creates) the event store.
 func OpenStore(path string) (*sql.DB, error) {
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 		return nil, err
@@ -75,7 +74,6 @@ func OpenStore(path string) (*sql.DB, error) {
 	return db, nil
 }
 
-// OpenStoreRO opens an existing store read-only.
 func OpenStoreRO(path string) (*sql.DB, error) {
 	if _, err := os.Stat(path); err != nil {
 		return nil, fmt.Errorf("no event store at %s (run `nanaoki ingest` first)", path)

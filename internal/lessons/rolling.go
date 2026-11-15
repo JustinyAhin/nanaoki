@@ -1,10 +1,4 @@
-// Package lessons is the rolling lesson store (RollingStore, Store,
-// retrieve_start_strict) to Go. Same lesson kinds, text, conditions and scoring. No new heuristics.
-//
-// Lesson kinds:
-//   - cause: an env/stack error cause (rules.Lesson) that a later call in the same session fixed.
-//   - sig:   an exact informative error signature with no env/stack cause, fixed the same way.
-//   - pref:  an instruction-like sentence the user wrote (PREF_RX), keyed by its normalized form.
+// Package lessons is the rolling lesson store of the research prototype: same lessons, text and scoring, no new heuristics.
 package lessons
 
 import (
@@ -20,7 +14,6 @@ import (
 	"github.com/JustinyAhin/nanaoki/internal/rules"
 )
 
-// Config selects the history the store reads.
 type Config struct {
 	Since               string          // errors from this ts ("" = all); the eval uses 2026-02-01
 	ExcludeProjects     map[string]bool // errors and prefs from these projects are left out (eval: client projects)
@@ -50,7 +43,6 @@ type Rolling struct {
 
 func gk(kind, key string) string { return kind + "\x00" + key }
 
-// Load reads the event store. It ports RollingStore.__init__.
 func Load(db *sql.DB, cfg Config) (*Rolling, error) {
 	r := &Rolling{DB: db, Cfg: cfg, groups: map[string][]*Episode{}, prefOcc: map[string][]prefOcc{},
 		pstackMem: map[string]map[string]map[string]bool{}}
@@ -116,8 +108,6 @@ func Load(db *sql.DB, cfg Config) (*Rolling, error) {
 	return r, nil
 }
 
-// ---------- stacks ----------
-
 var stackRx = []struct {
 	name string
 	rx   *regexp.Regexp
@@ -135,7 +125,6 @@ var stackRx = []struct {
 	{"postgres", rules.Py(`\bpsql\b|postgres`, "(?i)")},
 }
 
-// StacksOfText finds tools and frameworks named in command text.
 func StacksOfText(text string) []string {
 	var out []string
 	for _, s := range stackRx {
@@ -162,7 +151,6 @@ var fileStackRx = []struct {
 	{"statamic", rules.Py(`"statamic/cms"|config/statamic`, "")},
 }
 
-// FileStacks ports the FILE_STACK_RX match over a command + output blob.
 func FileStacks(blob string) []string {
 	var out []string
 	for _, s := range fileStackRx {
@@ -192,7 +180,7 @@ func sortTab(tab map[string]map[string][]string) {
 
 const nonMsg = `event_type not in ('user_msg','assistant_msg','compaction')`
 
-// projectStackTable ports project_stack_table: stack signals from command text, with timestamps.
+// projectStackTable returns stack signals from command text, with timestamps.
 func projectStackTable(db *sql.DB) (map[string]map[string][]string, error) {
 	rs, err := db.Query(`select project, ts, text from events where ` + nonMsg + ` and text is not null`)
 	if err != nil {
@@ -222,7 +210,7 @@ func projectStackTable(db *sql.DB) (map[string]map[string][]string, error) {
 	return tab, nil
 }
 
-// repoSignalTable ports repo_signal_table: manifest and framework files seen in commands and outputs.
+// repoSignalTable returns manifest and framework files seen in commands and outputs.
 func repoSignalTable(db *sql.DB) (map[string]map[string][]string, error) {
 	var likes []string
 	for _, w := range []string{"package.json", "svelte.config", "wrangler.", "next.config", "pyproject.toml", "go.mod",
@@ -253,7 +241,7 @@ func repoSignalTable(db *sql.DB) (map[string]map[string][]string, error) {
 // countBefore counts timestamps strictly before t. v must be sorted.
 func countBefore(v []string, t string) int { return sort.SearchStrings(v, t) }
 
-// PstackOf ports pstack_of: stacks with 3+ command signals before t.
+// PstackOf returns stacks with 3+ command signals before t.
 func (r *Rolling) PstackOf(p, t string) map[string]bool {
 	out := map[string]bool{}
 	for s, v := range r.pstack[p] {
@@ -290,8 +278,6 @@ func (r *Rolling) RepoStacksAt(p, t string) map[string]bool {
 // RepoSignalMin: a stack counts for a repo after this many file signals.
 const RepoSignalMin = 2
 
-// ---------- prefs ----------
-
 var (
 	prefRx = rules.Py(`\b(always|never|don't|do not|dont|make sure|must|prefer|only when|without|instead of|`+
 		`before you|remember|no need to|stop|avoid|use \w+ (for|instead|not))\b`, "(?i)")
@@ -305,7 +291,6 @@ var (
 	nsWS    = rules.Py(`\s+`, "")
 )
 
-// IsBareSkillCall ports is_bare_skill_call.
 func IsBareSkillCall(t string) bool { return bareSkillRx.MatchString(t) }
 
 // NormSentence removes URLs, paths and punctuation, lowercases text, and replaces numbers with N.
@@ -351,8 +336,7 @@ func SplitSentences(t string) []string {
 	return append(out, string(rs[start:]))
 }
 
-// PrefSentences returns the (normalized, original) instruction-like sentences of one user message, with the
-// filters of build_prefs / _pref_occurrences.
+// PrefSentences returns the (normalized, original) instruction-like sentences of one user message.
 func PrefSentences(text string) [][2]string {
 	lt := strings.TrimLeftFunc(text, unicode.IsSpace)
 	if strings.HasPrefix(lt, "<") || strings.HasPrefix(lt, "#") || strings.HasPrefix(lt, "{") || strings.HasPrefix(lt, "[") ||
@@ -400,8 +384,6 @@ func (r *Rolling) loadPrefs() error {
 	return rs.Err()
 }
 
-// ---------- lessons ----------
-
 // Example is one evidence row of a lesson.
 type Example struct {
 	Project string `json:"project"`
@@ -414,7 +396,10 @@ type Example struct {
 	Pointer string `json:"pointer,omitempty"`
 }
 
-// Lesson mirrors the Python lesson dict.
+// Lesson kinds:
+//   - cause: an env/stack error cause (rules.Lesson) that a later call in the same session fixed.
+//   - sig:   an exact informative error signature with no env/stack cause, fixed the same way.
+//   - pref:  an instruction-like sentence the user wrote (PREF_RX), keyed by its normalized form.
 type Lesson struct {
 	ID         string         `json:"id"`
 	Kind       string         `json:"kind"`
@@ -480,7 +465,7 @@ func mostCommon(items []string, n int) []string {
 	return order
 }
 
-// errorLesson ports RollingStore._lesson for fixed episodes L (ts order), seen at time t.
+// errorLesson builds the lesson for fixed episodes L (ts order), seen at time t.
 func (r *Rolling) errorLesson(kind, key string, L []*Episode, t string) *Lesson {
 	proj := map[string]int{}
 	var projOrder []string
@@ -528,7 +513,7 @@ func (r *Rolling) errorLesson(kind, key string, L []*Episode, t string) *Lesson 
 	if kind == "cause" {
 		text = rules.Lesson[key]
 		if exFix != nil {
-			text += " Fix seen (" + exFix.Project + "): `" + exFix.Fix + "`."
+			text += " Fix seen: `" + ShortCmd(exFix.Fix, 60) + "`" + fixNote(exFix) + "."
 		}
 	} else {
 		failed := ""
@@ -537,7 +522,7 @@ func (r *Rolling) errorLesson(kind, key string, L []*Episode, t string) *Lesson 
 		}
 		text = "Error `" + rules.Redact(key, 140) + "` after `" + failed + "`"
 		if exFix != nil {
-			text += " was fixed by: `" + exFix.Fix + "`."
+			text += " was fixed by: `" + ShortCmd(exFix.Fix, 60) + "`" + fixNote(exFix) + "."
 		} else {
 			text += " was fixed in the same session."
 		}
@@ -557,7 +542,7 @@ func (r *Rolling) errorLesson(kind, key string, L []*Episode, t string) *Lesson 
 		Sessions: len(sess), FirstTs: L[0].Ts, LastTs: L[len(L)-1].Ts, Examples: examples, EpisodeTs: epTs, sessionIDs: sessOrder}
 }
 
-// prefLesson ports RollingStore._prefs for one normalized sentence.
+// prefLesson builds the lesson for one normalized sentence.
 func prefLesson(n string, o []prefOcc) *Lesson {
 	proj := map[string]int{}
 	sess := map[string]bool{}
@@ -593,7 +578,7 @@ type Trigger struct {
 	SessStacks []string `json:"sess_stacks,omitempty"` // stacks seen in the session so far
 }
 
-// Snapshot builds a snapshot: a Store with the lessons this trigger can reach, from history before t,
+// Snapshot returns a Store with the lessons this trigger can reach, from history before t,
 // without the session excl.
 func (r *Rolling) Snapshot(tr Trigger, t, excl string) *Store {
 	var ls []*Lesson

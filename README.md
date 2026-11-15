@@ -15,35 +15,21 @@ I ran this on 9 months of my own Claude Code and Codex history (3,030 Codex sess
 
 Your numbers, in one command:
 
-```
-$ nanaoki --split auto
+![nanaoki --split auto: repeat-after-fix section](assets/report-raf.png)
 
-3. REPEAT-AFTER-FIX
-  2,320 of 5,685 TEST error episodes (41%) hit a cause or signature that was
-  already fixed in TRAIN. Same project: 705. Other project only: 1,615.
+Before a known-bad command runs, the agent gets a warning and the fixed command. After a failure, it gets the lesson from the session that already fixed it, even in another repo:
 
-  Repeats  Same proj  Other proj  Error                 Earliest fix
-  540      476        64          command_not_found     2026-02-26
-  463      403        60          zsh_glob_nomatch      2026-02-25
-  459      393        66          path_guess            2026-02-25
-  118      78         40          svelte_check_errors   2026-03-06
-```
+![The guard and lesson messages that the agent sees](assets/hooks.png)
 
-Before a known-bad command runs, the agent gets a warning and the fixed command:
+Search your past sessions. The answer ranks above the commands that only grep for the words:
 
-```
-nanaoki guard: [zsh_glob] zsh fails with "no matches found" when an unquoted glob
-matches no file: `src/routes/blog/[slug]`. Quote words with [ ] * ?.
-Suggested command: `ls 'src/routes/blog/[slug]'`
-```
+![nanaoki search with grouped, highlighted results](assets/search.png)
 
-After a failure, the agent gets the lesson from the session that already fixed it, even in another repo:
+The top of the report: coverage and the most repeated errors.
 
-```
-This error matches lessons from your earlier sessions (nanaoki):
-[L1] SvelteKit lint: wrap internal hrefs/goto with resolve() from $app/paths
-(svelte/no-navigation-without-resolve). Fix seen (project-b, 2026-09-03).
-```
+![nanaoki report: coverage and repeated errors](assets/report-top.png)
+
+Screenshots use `--anon`, which hides project names, session ids and home paths. Use it when you share your report.
 
 ## Why not just CLAUDE.md?
 
@@ -126,7 +112,7 @@ The plugin:
 nanaoki search "502 prerender" --since 3m
 ```
 
-Full-text search over all your prompts, agent messages and tool output, with the session and time for each hit. The `past-sessions` skill tells agents to use it when you ask "did we fix this before?".
+Full-text search over all your prompts, agent messages and tool output, with the session and time for each hit. Answers and questions rank above tool calls that only grep for the words. Hits from one session are grouped, and the session you run it from is left out (`--include-current` keeps it). `--paths` shows the source file and line. The `past-sessions` skill tells agents to use it when you ask "did we fix this before?".
 
 ## Rules you keep typing
 
