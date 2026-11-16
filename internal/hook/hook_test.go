@@ -80,10 +80,14 @@ func TestPreToolUse(t *testing.T) {
 	if h["permissionDecision"] != "deny" || !strings.Contains(h["permissionDecisionReason"].(string), "echo '====='") {
 		t.Errorf("zsh_eq must block with the fixed command: %v", h)
 	}
-	o, _ = Handle("codex", "PreToolUse", Input{SessionID: "s", Cwd: t.TempDir(), ToolName: "Bash", ToolInput: raw(`{"command":["bash","-lc","curl https://x.test/?a=1"]}`)}, d)
+	o, _ = Handle("codex", "PreToolUse", Input{SessionID: "s", Cwd: t.TempDir(), ToolName: "Bash", ToolInput: raw(`{"command":["zsh","-lc","curl https://x.test/?a=1"]}`)}, d)
 	h = o["hookSpecificOutput"].(map[string]any)
-	if h["permissionDecision"] != nil || !strings.Contains(h["additionalContext"].(string), "'https://x.test/?a=1'") {
-		t.Errorf("glob must warn (no decision): %v", h)
+	if h["permissionDecision"] != "deny" || !strings.Contains(h["permissionDecisionReason"].(string), "'https://x.test/?a=1'") {
+		t.Errorf("unmatched glob in zsh must block with the fixed command: %v", h)
+	}
+	// bash passes an unmatched glob through as text: no zsh guard, even when the login shell is zsh
+	if o, _ := Handle("codex", "PreToolUse", Input{SessionID: "s", Cwd: t.TempDir(), ToolName: "Bash", ToolInput: raw(`{"command":["bash","-lc","curl https://x.test/?a=1"]}`)}, d); o != nil {
+		t.Errorf("bash command: %v", o)
 	}
 	if o, _ := Handle("claude", "PreToolUse", Input{SessionID: "s", Cwd: t.TempDir(), ToolName: "Read", ToolInput: raw(`{"file_path":"x"}`)}, d); o != nil {
 		t.Errorf("non-shell tool: %v", o)

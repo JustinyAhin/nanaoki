@@ -82,12 +82,12 @@ Each guard is deterministic, small, and has a unit test (`internal/guards`). A g
 | Guard | Lesson (cause) | Fires when | Decision |
 |---|---|---|---|
 | `zsh_eq` | `zsh_eq_quote` | Your shell is zsh and a word starts with an unquoted `=` that is not a command name (`echo =====`). Skipped inside `[[ ]]`. | **block** (safe: zsh stops with "not found") |
-| `zsh_glob` | `zsh_glob_nomatch` | Your shell is zsh and an unquoted word has `*`, `?` or `[..]` that matches no file in the cwd (URLs with `?`, `[slug]` routes, `--include=*.md`). | warn |
+| `zsh_glob` | `zsh_glob_nomatch` | Your shell is zsh and an unquoted word has `*`, `?` or `[..]` that matches no file in the cwd (URLs with `?`, `[slug]` routes, `--include=*.md`). In a chain the other commands still run, so the agent sees exit 0 and misses results. | block |
 | `format_before_commit` | `prettier_check` | `git commit` in a repo whose `package.json` has a `format` script, and no formatter ran earlier in the session. | warn |
-| `node_version` | `node_version` | npm, npx, pnpm, yarn, node or corepack in a repo that pins a Node major (`.nvmrc`, `.node-version`, `.tool-versions`, `engines.node`) that differs from the node on PATH. | warn |
+| `node_version` | `node_version` | npm, npx, pnpm, yarn, node or corepack in a repo that pins a Node major (`.nvmrc`, `.node-version`, `.tool-versions`, `engines.node`) that differs from the node on PATH. Off by default; `NANAOKI_NODE_GUARD=1` turns it on. The hook sees the PATH of the agent process, not the PATH of the shell that runs the command, so it can warn on a correct Node. Quiet when node on PATH is a version-manager shim (vite-plus, volta, mise). | warn |
 | `ssh_user` | `ssh_vps_user` | `ssh HOST`, `scp HOST:`, `rsync HOST:` with no user, when an earlier session fixed `ssh HOST` with `ssh USER@HOST`. | warn |
 
-The zsh guards run only when `$SHELL` (or `NANAOKI_SHELL`) is zsh.
+The zsh guards run only when the command runs in zsh: the shell of a Codex argv command (`["bash", "-lc", ...]` is bash), else `$SHELL` (or `NANAOKI_SHELL`).
 
 ### Speed and failure
 

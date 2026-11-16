@@ -65,7 +65,11 @@ func RealEnv(cwd string, ix *lessons.Index) *guards.Env {
 	if ix != nil {
 		e.SSHUsers = ix.SSHUsers
 	}
-	e.NodeMajor = func() (int, bool) { return cachedNodeMajor() }
+	// Off by default: the hook sees the PATH of the agent process, not the PATH of the shell that runs the
+	// command (nvm and version-manager shims set it per shell and per folder), so it warned on correct Node.
+	if os.Getenv("NANAOKI_NODE_GUARD") == "1" {
+		e.NodeMajor = func() (int, bool) { return cachedNodeMajor() }
+	}
 	return e
 }
 
@@ -142,6 +146,9 @@ func Handle(agent, event string, in Input, d Deps) (Output, error) {
 			e = RealEnv(in.Cwd, ix)
 		}
 		e.FormatRan = st.FormatRan
+		if sh := shellOf(in.ToolInput); sh != "" {
+			e.Shell = sh // Codex can run a command in bash even when the login shell is zsh
+		}
 		fs := guards.Check(cmd, e)
 		if guards.FormatRx.MatchString(cmd) {
 			st.FormatRan = true
@@ -209,6 +216,17 @@ func shellTool(name string) bool {
 		return true
 	}
 	return false
+}
+
+// shellOf returns the shell of an argv command (["bash", "-lc", "cmd"] -> "bash"), else "".
+func shellOf(raw json.RawMessage) string {
+	var ti struct {
+		Command []string `json:"command"`
+	}
+	if json.Unmarshal(raw, &ti) != nil || len(ti.Command) < 3 || (ti.Command[1] != "-lc" && ti.Command[1] != "-c") {
+		return ""
+	}
+	return ti.Command[0]
 }
 
 // commandOf reads tool_input.command: a string, or an argv list (["bash", "-lc", "cmd"] -> "cmd").
@@ -374,20 +392,24 @@ func cachedNodeMajor() (int, bool) {
 	cache := filepath.Join(lessons.DefaultDir(), "node-version.json")
 	p := os.Getenv("PATH")
 	var c struct {
+		V     int    `json:"v"`
 		Path  string `json:"path"`
 		Major int    `json:"major"`
 		OK    bool   `json:"ok"`
 	}
-	if b, err := os.ReadFile(cache); err == nil && json.Unmarshal(b, &c) == nil && c.Path == p {
+	if b, err := os.ReadFile(cache); err == nil && json.Unmarshal(b, &c) == nil && c.V == nodeCacheV && c.Path == p {
 		return c.Major, c.OK
 	}
 	n, ok := guards.NodeMajorFromPath(lookPath)
-	c.Path, c.Major, c.OK = p, n, ok
+	c.V, c.Path, c.Major, c.OK = nodeCacheV, p, n, ok
 	if b, err := json.Marshal(c); err == nil {
 		_ = os.WriteFile(cache, b, 0o644)
 	}
 	return n, ok
 }
+
+// nodeCacheV changes when NodeMajorFromPath changes, so that an old cached answer is not used.
+const nodeCacheV = 2
 
 var lookPath = exec.LookPath
 

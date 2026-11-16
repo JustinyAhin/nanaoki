@@ -77,7 +77,7 @@ func TestZshGlob(t *testing.T) {
 	}
 	for in, want := range cases {
 		f := find(Check(in, e), "zsh_glob")
-		if f == nil || f.Fixed != want || f.Decision != Warn {
+		if f == nil || f.Fixed != want || f.Decision != Block {
 			t.Errorf("%q: got %+v, want fixed %q", in, f, want)
 		}
 	}
@@ -180,5 +180,27 @@ func TestCombinedFix(t *testing.T) {
 	fs := Check(`curl https://x.test/a?b=1 && echo ===`, e)
 	if len(fs) != 2 || fs[0].Fixed != `curl 'https://x.test/a?b=1' && echo '==='` || fs[1].Fixed != fs[0].Fixed {
 		t.Errorf("got %+v", fs)
+	}
+}
+
+func TestNodeMajorShim(t *testing.T) {
+	dir := t.TempDir()
+	vp := filepath.Join(dir, "0.1.12", "bin", "vp")
+	if err := os.MkdirAll(filepath.Dir(vp), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(vp, []byte("#!/bin/sh\necho 'vp v0.1.12'\n"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	shim := filepath.Join(dir, "node")
+	if err := os.Symlink(vp, shim); err != nil {
+		t.Fatal(err)
+	}
+	// a version-manager shim: the version depends on the folder, so no answer (the guard stays quiet)
+	if n, ok := NodeMajorFromPath(func(string) (string, error) { return shim, nil }); ok {
+		t.Errorf("shim gave node %d", n)
+	}
+	if n, ok := NodeMajorFromPath(func(string) (string, error) { return "/x/.nvm/versions/node/v24.7.0/bin/node", nil }); !ok || n != 24 {
+		t.Errorf("nvm path = %d %v", n, ok)
 	}
 }

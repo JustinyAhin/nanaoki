@@ -202,7 +202,9 @@ func zshGlob(src string, cmds []Command, e *Env) (Finding, bool) {
 	if len(bad) == 0 {
 		return Finding{}, false
 	}
-	return Finding{Guard: "zsh_glob", Cause: "zsh_glob_nomatch", Decision: Warn,
+	// Block: the word fails for certain (known folder, no ** pattern, no file matches), and in a chain the
+	// other commands still run, so the agent sees exit 0 and misses results. Quoting changes nothing else.
+	return Finding{Guard: "zsh_glob", Cause: "zsh_glob_nomatch", Decision: Block,
 		Message: "zsh fails with \"no matches found\" when an unquoted glob matches no file: `" + bad[0].Value +
 			"`. Quote words with [ ] * ? (URLs, [slug] routes, --include=*.md).",
 		Fixed: replaceSpans(src, bad, func(w Word) string { return singleQuote(w.Value) }), words: bad}, true
@@ -429,7 +431,9 @@ func nodeVersion(cmds []Command, e *Env) (Finding, bool) {
 }
 
 // NodeMajorFromPath finds the node major version without running node when the install path holds it
-// (fnm, nvm, volta, asdf, Homebrew node@N); else it runs `node --version`.
+// (fnm, nvm, volta, asdf, Homebrew node@N); else it runs `node --version`. When node on PATH is a shim of a
+// version manager (vite-plus, volta, mise: the real file is not named node), the version depends on the
+// folder and the shell that runs the command, so it returns false and the guard stays quiet.
 func NodeMajorFromPath(lookPath func(string) (string, error)) (int, bool) {
 	p, err := lookPath("node")
 	if err != nil {
@@ -438,20 +442,28 @@ func NodeMajorFromPath(lookPath func(string) (string, error)) (int, bool) {
 	if r, err := filepath.EvalSymlinks(p); err == nil {
 		p = r
 	}
-	if m := regexp.MustCompile(`(?:/v|node@|/node/|installs/nodejs/)(\d+)(?:[./]|$)`).FindStringSubmatch(p); m != nil {
+	if strings.TrimSuffix(strings.ToLower(filepath.Base(p)), ".exe") != "node" {
+		return 0, false
+	}
+	if m := nodePathRx.FindStringSubmatch(p); m != nil {
 		n, _ := strconv.Atoi(m[1])
-		return n, true
+		return n, n > 0
 	}
 	out, err := exec.Command(p, "--version").Output()
 	if err != nil {
 		return 0, false
 	}
-	if m := majorRx.FindString(string(out)); m != "" {
-		n, _ := strconv.Atoi(m)
-		return n, true
+	if m := nodeVerRx.FindStringSubmatch(strings.TrimSpace(string(out))); m != nil {
+		n, _ := strconv.Atoi(m[1])
+		return n, n > 0
 	}
 	return 0, false
 }
+
+var (
+	nodePathRx = regexp.MustCompile(`(?:/v|node@|/node/|installs/nodejs/)(\d+)(?:[./]|$)`)
+	nodeVerRx  = regexp.MustCompile(`^v?(\d+)\.\d+`)
+)
 
 // sshUser: an earlier lesson shows that `ssh HOST` failed and `ssh USER@HOST` fixed it. Warn on `ssh HOST`
 // with no user and suggest the user from the lesson.
