@@ -1,0 +1,48 @@
+name: My number
+description: Share your repeat-after-fix number and tell us if the top errors look real.
+title: "My number: "
+labels: ["my-number"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Run `nanaoki --split auto --anon` and copy from section 3. `--anon` hides project names, session ids and home paths. Do not paste anything you would not want public.
+  - type: input
+    id: number
+    attributes:
+      label: Your number
+      description: The line "X of Y TEST error episodes (Z%)" from section 3.
+      placeholder: 2,454 of 5,849 TEST error episodes (42%)
+    validations:
+      required: true
+  - type: dropdown
+    id: agents
+    attributes:
+      label: Agents in your history
+      options:
+        - Claude Code
+        - Codex
+        - Both
+    validations:
+      required: true
+  - type: input
+    id: history
+    attributes:
+      label: History range
+      description: From section 1, the first and last date.
+      placeholder: 2026-02-11 to 2026-11-16
+  - type: dropdown
+    id: top
+    attributes:
+      label: Do the top 10 errors in section 3 look real?
+      options:
+        - Yes, most of them
+        - Some are real, some are noise
+        - Mostly noise
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: What looks wrong
+      description: Errors that are not really repeats, causes that are mixed up, things the report missed. Paste --anon output only.

@@ -17,7 +17,7 @@ Your number, in one command:
 
 ![nanaoki --split auto: repeat-after-fix section](assets/report-raf.png)
 
-Before a command that's known to fail, the agent gets a warning and the fixed command. After a failure, it gets the lesson from the session that fixed it, even if that was in another repo:
+Before a command that's known to fail, the guard stops it and gives the agent the fixed command. After a failure, it gets the lesson from the session that fixed it, even if that was in another repo:
 
 ![The guard and lesson messages that the agent sees](assets/hooks.png)
 
@@ -106,7 +106,7 @@ After that, the plugin refreshes the lessons once a day in the background. See [
 
 What the plugin does:
 
-- Before a few shell commands that are known to fail, it warns and suggests the fixed command. Unquoted zsh globs come first.
+- Before a few shell commands that are known to fail, it blocks the command (or warns, when a block is not safe) and gives the fixed command. Unquoted zsh globs come first.
 - After a failed command, it shows up to 3 lessons from your history that match the error, with where each one was fixed.
 - At the first prompt of a session, it shows 1-2 rules that match the repo.
 - It stays quiet on probes (`cat x 2>/dev/null`, `test -f`, a grep with no match).
