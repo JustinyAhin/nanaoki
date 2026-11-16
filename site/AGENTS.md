@@ -2,7 +2,6 @@
 
 SvelteKit 3 app with Svelte 5 and TypeScript, prerendered and served by Cloudflare Workers. Bun is the package manager.
 
-
 ## Code
 
 - Use Svelte 5 runes. Use kebab-case filenames and named-object parameters.

@@ -1,0 +1,287 @@
+---
+title: "Announcing nanaoki: your agent already fixed this"
+description: nanaoki is out today. My coding agents kept fixing errors they had already fixed, usually in another repo. I counted it on 9 months of my own Claude Code and Codex history, tested whether a better CLAUDE.md would be enough, and built nanaoki from what I found.
+date: 2026-11-16
+draft: false
+og: /blog/announcing-nanaoki/card.png
+tags:
+  - announcement
+  - coding-agents
+  - claude-code
+  - codex
+---
+
+{% art name="seven-falls" height=420 width="wide" caption="Seven lines fall away. The eighth rises." /%}
+
+## The fix was in the other repo
+
+On November 9, a Cloudflare build failed on one of my sites. The CMS had answered a request with a 502 while SvelteKit was prerendering, and the build stopped there.
+
+I had a feeling I'd seen this before. I pasted the build log into Claude Code and typed:
+
+```
+isn't this something we've fixed here? or in one of the projects? check the recent claude code sessions
+```
+
+The agent searched my old sessions for the error text, `Received HTTP 502 from GraphQL endpoint`. This came back:
+
+```
+No matching sessions found.
+```
+
+It kept going with broader terms, and then it read the git log of a sibling repo. The fix was there, in a commit from October 30. Same CMS, same kind of prerender failure, a different site. Ten days old.
+
+So the fix existed. It was on the same laptop, and the same tool had written it. The agent only went looking because I had a vague feeling and typed a messy question.
+
+I wanted to know how often this happens on the days I don't have the feeling. That question turned into a tool, and today I'm releasing it. It's called [nanaoki](https://github.com/JustinyAhin/nanaoki). It is open source, it runs on your machine, and there is no model in it. This post is the long version of why it exists and what I measured before I trusted it.
+
+## Counting it
+
+Claude Code and Codex both keep their session history on disk, in `~/.claude` and `~/.codex`. I wrote a script that reads all of it and puts every prompt, tool call and tool error into a local SQLite file. Later I ported it to a Go CLI. It is regexes and counting.
+
+My history goes from February 11 to November 16: 3,033 Codex sessions, 359 Claude Code transcripts, and about 19K tool errors.
+
+The question I asked: when an agent hits an error, had an agent already hit the same thing and got past it?
+
+I split the history by date so that I couldn't flatter the number. February to August is "before". September 1 to November 14 is "after". An error in "after" counts as a repeat only if the same cause was hit and fixed in "before".
+
+2,274 of 5,290. That's 43% of the error episodes in "after".
+
+{% episodes total=5290 repeats=2274 crossProject=1578 sameProject=696 /%}
+
+An episode is one cause in one session, so twenty retries of the same failing command count once.{% sidenote %}A cause is one of 47 regex rules I wrote, for example "zsh glob with no match" or "command not found". When no rule fits, the cause is the normalized error text.{% /sidenote %}
+
+1,578 of those 2,274 repeats had the fix only in a different project. The agent worked it out in one repo, and the next repo started from zero. So the 502 wasn't a one-off. Most of the repeats look like it.
+
+{% art name="other-repo" height=300 caption="The fix was written once. It stayed where it was written." /%}
+
+These are the top five:
+
+| Error | Repeats in "after" | Fix was only in another project |
+|---|---|---|
+| Command not found | 311 | 196 |
+| Guessed a path that does not exist | 285 | 176 |
+| zsh "no matches found" | 223 | 136 |
+| Prettier check failed | 167 | 137 |
+| Module not found | 94 | 69 |
+
+Two notes before anyone trusts that 43% too much.
+
+{% callout type="warn" %}
+"Fixed" means that a later command with the same head succeeded, in the same session, within 30 minutes. That can be a real fix. It can also be a workaround, or an unrelated command that happened to pass. So 43% is an upper estimate.
+{% /callout %}
+
+The report also drops error text that a script or a harness put in the chat. With that filter off, it's 2,331 of 5,971, or 39%. And if I drop the date split and let any earlier session count, it goes up to 59%. I use the split number because a fix from last Tuesday is a softer test.
+
+One more thing. The 502 that started all this is not in the 43%. Its only earlier fix was on October 30, which is inside "after". The case that made me write the script doesn't count in the script's main number.
+
+## Most of them are boring
+
+I expected to find hard bugs that the agent had to solve twice. Most of the list is not that.
+
+The zsh one is the best example. A SvelteKit route like `src/routes/[slug]`, or a URL with a `?` in it, with no quotes around it. zsh treats it as a glob and answers "no matches found". The agent sees the error, adds quotes, and moves on. That error is in 471 sessions across 56 projects.
+
+Each of these costs a minute, so the total is smaller than I feared. About 15 hours of wall time in the repeats, out of 36 hours in all error episodes. That is the time from the error to the next successful command. It doesn't count the tokens, or me watching.
+
+What bothers me more is the trend, because there isn't one.
+
+{% chart type="line" unit="%" caption="Share of tool errors each month that repeat an error from an earlier session on an earlier day. My own history, 2026." data=[{label: "Feb", value: 8}, {label: "Mar", value: 22}, {label: "Apr", value: 29}, {label: "May", value: 48}, {label: "Jun", value: 42}, {label: "Jul", value: 26}, {label: "Aug", value: 29}, {label: "Sep", value: 29}, {label: "Oct", value: 27}, {label: "Nov", value: 28}] /%}
+
+From March on, between 22% and 48% of the tool errors in each month repeat an error from an earlier session. It doesn't go down as the history grows. My agents in November had nine months of solved problems on the same disk and repeated about as much as they did in April.
+
+Some lessons also expire. In the spring, Codex sandbox errors like a locked git index were near the top of my list, in 118 sessions. After I changed my setup they almost disappeared. A file of lessons written in August would still carry that line today.
+
+## I repeat myself too
+
+The same script counts what I type. I thought I was doing well at writing my rules down. Then I saw this:
+
+{% chart type="bar" unit=" sessions" caption="Rules I typed again in new sessions, with the date I first typed each one." data=[{label: "Run the humanizer on copy (since Mar 3)", value: 193}, {label: "Investigate only, no changes yet (since Feb 26)", value: 183}, {label: "Branch naming and PR base (since Feb 23)", value: 76}, {label: "No AI attribution in commits (since Feb 23)", value: 40}, {label: "Commit or push only when told (since Feb 19)", value: 38}] /%}
+
+The second row is usually some version of this:
+
+```
+why? don't make any changes yet
+```
+
+The attribution row is the one that annoys me. I don't want a `Co-Authored-By` trailer in my commits. That rule is saved in memory files in 6 of my projects and in a repo's AGENTS.md. Commits still had the trailer in 21 sessions. On October 28 I typed:
+
+```
+rewrite the two commits, don't add the claude attribution things
+```
+
+The rule was never in my global CLAUDE.md. I had saved it in six projects, and none of them was the place that loads everywhere.
+
+I also kept asking agents to check my past sessions, which is how this post started. From February to June that was 0 to 4 times a month. Since August it's 19 to 39.
+
+## I was sure a better CLAUDE.md would be enough
+
+My first reaction to all of this was: fine, put the top 25 causes in CLAUDE.md and AGENTS.md, done. I almost did only that.
+
+But I've shipped enough things on vibes, and [the last time I built an eval it caught itself first](https://segbedji.com/the-first-thing-my-eval-caught-was-itself). So I tested the file before I built anything else.
+
+I picked 108 real cases from "after": 72 errors, 14 decisions (a moment where a rule of mine applied, like a commit or a PR), and 22 questions where I asked about earlier work. For each case I froze the moment just before it went wrong. Then I asked: with this setup, what would the agent have seen at that moment, and would it have prevented what came next?
+
+Two models answered that, Claude Sonnet and GPT-5.4-mini. So this is a replay with AI judges, on my own data. It is not live use.{% sidenote %}The GPT judge saw 73 of the 108, because I kept the cases with client work in them away from it. The two agreed on 93% of the cases they both saw.{% /sidenote %}
+
+{% eval-explorer
+  setups=["Nothing", "AGENTS.md written from the earlier history", "Lessons, frozen at August 31", "Lessons, all history before the case"]
+  tokens=[0, 1733, 30, 36]
+  slices=[
+    {id: "all", label: "All cases", judge: "claude", n: 108, values: [0, 31, 44, 53], ci: [null, [23, 41], [34, 53], [44, 62]], caption: "108 real cases from September to November, replayed. Two AI judges, my own data. A replay, not live use."},
+    {id: "all", label: "All cases", judge: "gpt", n: 73, values: [0, 29, 44, 59], ci: [null, [19, 40], [33, 55], [48, 70]]},
+    {id: "errors", label: "Errors", judge: "claude", n: 72, values: [0, 39, null, 76], caption: "The file had the line. The agent still made the error."},
+    {id: "decisions", label: "Decisions", judge: "claude", n: 14, values: [0, 43, 14, 14], extra: {label: "Lessons + rules suggest", value: 50}, caption: "The file wins. A rule that always applies belongs in a file that is always loaded."},
+    {id: "questions", label: "Questions about earlier work", judge: "claude", n: 22, values: [0, 0, 0, 0], extra: {label: "Lessons + search", value: 23}, caption: "Every setup scored 0 until I added session search."},
+    {id: "questions", label: "Questions about earlier work", judge: "gpt", n: 22, values: [0, 0, 0, 0], extra: {label: "Lessons + search", value: 20}},
+    {id: "no-precedent", label: "No precedent before September", judge: "claude", n: 42, values: [0, 10, 0, 24], ci: [null, [2, 19], null, [12, 38]], caption: "Lessons that stopped learning in August lose to the file."},
+    {id: "no-precedent", label: "No precedent before September", judge: "gpt", n: 35, values: [0, 6, 0, 29], ci: [null, [0, 14], null, [14, 43]]}
+  ]
+/%}
+
+A lesson here is a sentence or two, about 36 tokens: the cause and the fix that worked last time. It is shown after the tool call fails, and only if it matches. The AGENTS.md file is about 1,700 tokens and it is there on every turn.
+
+Over the whole set, the file prevented 31% and the lessons 53% with the Claude judge (29% and 59% with the GPT judge). On the 72 error cases it was 39% against 76%. That was not what I expected. A line like "list the files before you guess a path" is in most AGENTS.md files already, and the agent still guesses.
+
+Then the parts where I was wrong in the other direction. Pick "Decisions" in the chart above.
+
+On the 14 decision cases the file won, 43% to 14%. "Commit only when told" applies all the time, so it belongs in a file that is always loaded. A lesson that waits for an error never fires for it.
+
+Lessons frozen at the end of August also lost to the file on cases that had no precedent in "before", 0% to 10%. A store that stops learning in August knows nothing about October.
+
+And on the 22 questions about earlier work, every setup scored 0%. An awkward result for a project that started with "isn't this something we've fixed here?".
+
+So I added two things and measured again. Full-text search over all the old sessions took those 22 questions from 0% to 23%. And a command that proposes CLAUDE.md lines from rules I typed in 2 or more sessions took the decision cases to 50%, which is above the file.
+
+I also added a few guards that run before a shell command, for example for the unquoted zsh glob. In the replay they caught 5 of the 72 error cases before the command ran, with no false warning on 90 commands that had succeeded. They didn't move the score, because the lessons already caught those five after the first failure. They only save the failure.
+
+## The name
+
+The name comes from a Japanese proverb, nana korobi ya oki. Fall seven times, stand up eight.
+
+{% proverb /%}
+
+The count looks off by one. Seven falls should give you seven times up. The eighth is there because you were standing before the first fall. It's also the drawing at the top of this post.
+
+nanaoki can't stop the falls. My agents had the falling part covered, and they will keep hitting errors. What it can do is make sure that when the agent gets up, it knows what worked last time.
+
+## What nanaoki is
+
+It is one Go binary. It reads the session logs that are already on your disk and does five things with them.
+
+{% steps %}
+1. It reads. It parses the Claude Code and Codex sessions in `~/.claude` and `~/.codex` into a local SQLite store. It never changes those folders.
+2. It detects. It finds the errors that keep coming back, and for each one the later command that worked.
+3. It writes a lesson. Each fix becomes a sentence or two: what failed, what fixed it, and the project and month it came from.
+4. It guards. For a few shell commands that are known to fail, a hook stops the command before it runs and gives the agent the fixed one.
+5. It searches. Full-text search covers your prompts, the agent's replies and the tool output, for the days you do have the feeling.
+{% /steps %}
+
+The part you notice is the hooks. This is what the agent sees. Run a command and switch nanaoki on and off:
+
+{% hook-demo cases=["zsh-equals", "sveltekit-resolve", "missing-script", "wrong-lesson"] /%}
+
+The last case in that demo is a miss, and I left it in on purpose. The agent guessed a path that didn't exist, and nanaoki matched the error to the wrong cause and said the tool was missing. A lesson that points the wrong way costs more than no lesson at all. I wrote up [ten real cases from the replay](/cases/), and two of them are misses.
+
+A few rules I set for the hooks, because a noisy hook gets uninstalled:
+
+- They only read a cached index. They never rebuild anything while the agent waits. In the replay the hook's p95 was 15 ms.
+- They fail open. If nanaoki breaks, it prints nothing and your command runs as if it wasn't there.
+- A guard never changes a command silently. It warns or blocks, and shows the fixed command.
+- They stay quiet on probes. A failed `test -f` or a grep with no match is the agent looking around.
+
+The other commands:
+
+{% terminal title="the rest of the CLI" %}
+```
+# read your history, print the report
+$ nanaoki
+# the strict number, on your own history
+$ nanaoki --split auto
+# "did we fix this before?"
+$ nanaoki search "502 prerender" --since 3m
+# lines for CLAUDE.md, from what you keep typing
+$ nanaoki rules suggest
+# what the plugin did, and what it missed
+$ nanaoki stats
+```
+{% /terminal %}
+
+`rules suggest` only prints a diff. It never writes to your files, because the rules it finds are noisy and I want to read them first.
+
+### Local only
+
+Session logs have your code in them, and your clients' code. I didn't want mine sent anywhere, so nanaoki sends nothing. It makes no network calls and has no account. It writes to one folder, `~/.local/share/nanaoki/`, and deleting that folder removes everything.{% sidenote %}One exception, which you run on purpose: `nanaoki setup claude` asks the `claude` CLI to fetch the plugin from GitHub.{% /sidenote %}
+
+There is also no LLM in it, and that has a cost. Regexes find error signatures. They don't find root causes, and the lesson text is sometimes just "this command failed, this one worked".
+
+## Two days of live use
+
+The replay is a model's opinion. The real test is whether the 43% goes down when the lessons are on in real sessions, and I can't answer that yet. The plugin has been on in my own sessions since November 15. That is two days.
+
+Two days were enough to show me a few things I had wrong.
+
+The zsh glob guard used to warn and suggest the quoted command. The agents ignored the warning, the glob failed inside a chain of commands that still exited 0, and nothing looked wrong. It blocks now.
+
+The Node version guard fired 43 times and helped zero times. The hook process sees a different PATH than the shell, so it warned about a Node that was correct. It is off by default now.
+
+And a counting bug went the other way. A build that fails behind a pipe or a `;` can still exit 0, and I was not counting those. Fixing that added 414 build and test failures to my own history, about 18% more.
+
+The one number I look at every day: after a lesson was shown for a failure, the same failure came back in that session 1 of 10 times. Ten events is not a result. I'm writing it down so I have something to compare with in a month.
+
+## What I can't tell from this
+
+It's one person's data. I work on a lot of small projects with the same stack, and that probably pushes the cross-project number up.
+
+I wrote the 47 cause rules while I was looking at this same history. They will miss things on another machine.
+
+Most of the error data is from Codex. Claude Code deletes old transcripts after `cleanupPeriodDays`, 30 days by default, and mine had removed everything before October 16. For Claude before that date I only have my prompts.
+
+{% callout type="note" %}
+If you use Claude Code, look at that setting today. `"cleanupPeriodDays": 3650` in `~/.claude/settings.json` keeps your transcripts.
+{% /callout %}
+
+And "prevented" is a model's opinion about a replay. I haven't measured what happens to the 43% in live use. I don't know that number yet.
+
+## What's next
+
+In rough order:
+
+- Better lesson text. Today a lesson is built from the command that worked. I want it written from the real fix, at the level of the cause. That probably needs a model, so it will be optional and opt-in.
+- Matching by meaning. The 502 was found by cause, and the error text matched nothing. Local embeddings should catch more of those.
+- Better signals for "fixed": tests, CI results, reverts, and me saying "no, not like that".
+- A scorecard for each lesson: how often it was shown, and whether the error came back. Lessons that don't help, or that expired like my sandbox errors, should retire themselves.
+- Cursor and Gemini CLI. Both have hooks.
+
+Later, teams. Most of my repeats had the fix in another project. On a team, the other project is often another person's laptop. If one developer's fix could protect everyone's agent, that seems worth building. The local CLI stays free and open source either way.
+
+## Try it
+
+{% install /%}
+
+Then:
+
+{% terminal title="your number" %}
+```
+$ nanaoki --split auto
+```
+{% /terminal %}
+
+That reads your history and prints the report. Section 3 is your version of my 43%: errors in the last third of your history whose cause was already fixed in the first two thirds. If you plan to share the output, add `--anon`. It hides project names, session ids and home paths.
+
+To turn on the lessons and guards:
+
+{% terminal title="the plugin" %}
+```
+$ nanaoki lessons build
+$ nanaoki setup claude
+$ nanaoki setup codex
+```
+{% /terminal %}
+
+It's v0.1, MIT, and the code is at [github.com/JustinyAhin/nanaoki](https://github.com/JustinyAhin/nanaoki).
+
+For now I'm running the plugin on my own sessions, and in a month I'll run the report again with a new "after" period. If the lessons work outside a replay, that 43% should be lower. I'll post the number either way.
+
+What I'd like most is the same report from other machines. If you run it, tell me your number and whether the top ten look real. I'm around on [X](https://x.com/iamsegbedji), and issues on the repo are open.
+
+{% art name="eighth" height=220 /%}

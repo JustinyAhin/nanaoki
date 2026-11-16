@@ -8,7 +8,6 @@
 	import type { InstallMethod } from '#lib/install.svelte.ts';
 
 	const id = $props.id();
-	const tabs: Record<string, HTMLButtonElement> = {};
 
 	onMount(loadInstallMethod);
 
@@ -25,7 +24,7 @@
 		event.preventDefault();
 		const method = METHODS[(next + METHODS.length) % METHODS.length];
 		selectInstallMethod(method);
-		tabs[method]?.focus();
+		document.getElementById(`${id}-tab-${method}`)?.focus();
 	};
 
 	const notes: Partial<Record<InstallMethod, string>> = { go: '# Go 1.26+' };
@@ -36,7 +35,6 @@
 		<div class="sw-tabs" role="tablist" aria-label="Install method">
 			{#each METHODS as method, index (method)}
 				<button
-					bind:this={tabs[method]}
 					type="button"
 					role="tab"
 					id="{id}-tab-{method}"

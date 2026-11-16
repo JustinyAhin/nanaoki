@@ -1,0 +1,135 @@
+---
+title: Kitchen sink for the blog kit
+description: Every Markdoc tag of the blog on one page. This post is a draft, so it renders in dev only. All numbers here are samples.
+date: 2026-11-15
+draft: true
+tags:
+  - meta
+---
+
+This page shows each tag of the blog kit. The numbers are samples, not research data. A paragraph can hold **bold**, a [link to the cases](/cases/) and `inline code`.{% sidenote %}This is a sidenote. On a wide screen it sits in the right margin. On a phone, tap the number to open it.{% /sidenote %} The measure stays near 70 characters, so long text is easy to read.
+
+## Text and notes
+
+A second paragraph with a longer sidenote, to check how two notes stack in the margin.{% sidenote %}A longer note. It has two sentences, so it wraps over several lines in the margin, and the next note must start below it.{% /sidenote %} Plain prose continues after the note, and wraps around nothing.
+
+{% callout type="note" %}
+A note callout. Use it for a short aside that the reader can skip.
+{% /callout %}
+
+{% callout type="warn" title="Before you run it" %}
+A warning callout with its own title. Use it when a step can lose data.
+{% /callout %}
+
+{% callout type="quote" cite="A reader, in a sample quote" %}
+The fix was in the other repo, and the agent never looked there.
+{% /callout %}
+
+> A plain Markdown blockquote also works.
+
+### A third-level heading
+
+- A bullet list item.
+- A second item with `code`.
+
+1. An ordered item.
+2. A second ordered item.
+
+---
+
+## Code and terminals
+
+```sh
+brew install nanaoki
+nanaoki --split auto
+```
+
+```ts
+const lesson = { cause: 'zsh_glob', fix: "ls -a '../web/.dev.vars*'" };
+```
+
+{% terminal title="after the failure · PostToolUseFailure" %}
+```
+$ bun run gen
+! error: Script not found "gen"
+└ This error matches lessons from your earlier sessions (nanaoki): [L1] Read package.json scripts first.
+# a comment line
+● Bash(ls -a)
+> a prompt line
+```
+{% /terminal %}
+
+| Error | Sample count | Sample share |
+|---|---|---|
+| Command not found | 120 | 31% |
+| Path that does not exist | 96 | 25% |
+| zsh "no matches found" | 64 | 17% |
+
+## Numbers
+
+{% stats %}
+{% stat value="1,234" label="sample sessions read" source="Sample source, for the kit only" /%}
+{% stat value="42%" label="sample share of repeats" source="Another sample source" /%}
+{% stat value=15 label="sample hook p95 in ms" /%}
+{% /stats %}
+
+{% stat value="7 of 8" label="a standalone stat with its source under it" source="Sample source" /%}
+
+{% chart type="bar" unit=" sessions" caption="A single-series bar chart with one bar in the accent." highlight="Second item" data=[{label: "First item, with a long label that wraps on a phone", value: 193}, {label: "Second item", value: 181}, {label: "Third item", value: 75}, {label: "Fourth item", value: 40}] /%}
+
+{% chart type="bar" title="Grouped bars" series=["Without", "With"] data=[{label: "Shell", values: [40, 12]}, {label: "Node", values: [28, 9]}, {label: "Git", values: [16, 7]}] /%}
+
+{% chart type="line" title="Repeats each month (sample)" unit="%" series=["AGENTS.md alone", "Lessons"] width="wide" data=[{label: "Mar", values: [41, 40]}, {label: "Apr", values: [38, 33]}, {label: "May", values: [39, 28]}, {label: "Jun", values: [36, 25]}, {label: "Jul", values: [37, 21]}, {label: "Aug", values: [35, 18]}] source="Sample data" /%}
+
+{% chart type="line" title="A single series" data=[{label: "W1", value: 3}, {label: "W2", value: 8}, {label: "W3", value: 6}, {label: "W4", value: 12}, {label: "W5", value: 10}] /%}
+
+{% chart type="stacked" title="Outcome by type (sample)" series=["Guard", "Lesson", "Missed"] data=[{label: "Shell", values: [3, 2, 1]}, {label: "Node", values: [1, 2, 0]}, {label: "Prefs", values: [0, 1, 1]}] /%}
+
+## Interactive pieces
+
+{% compare label="Without and with nanaoki" %}
+{% pane label="Without nanaoki" %}
+{% terminal title="the agent starts from zero" %}
+```
+$ bun run gen
+! error: Script not found "gen"
+```
+{% /terminal %}
+{% /pane %}
+{% pane label="With nanaoki" %}
+{% terminal title="the lesson comes back" %}
+```
+$ bun run gen
+! error: Script not found "gen"
+└ [L1] Read package.json scripts first. Fix seen: bun run format:check
+```
+{% /terminal %}
+{% /pane %}
+{% /compare %}
+
+{% steps %}
+1. It reads. It parses the session logs into a local store.
+2. It detects. It finds the errors that come back, and the later command that worked.
+3. It writes a lesson. Each fix becomes a sentence or two.
+4. It guards. A hook stops a few commands before they run.
+{% /steps %}
+
+{% reveal %}
+This paragraph fades in when it scrolls into view. With reduced motion, it is simply there.
+{% /reveal %}
+
+## Art and figures
+
+{% art name="seven-falls" height=360 caption="Seven lines fall away. The eighth rises." width="wide" seed=3 /%}
+
+{% art name="seven-falls" height=200 seed=11 /%}
+
+{% figure src="/assets/og.png" alt="The nanaoki social card: seven pale lines fall away, an eighth in gold rises." caption="A wide figure with an image from static/." width="wide" /%}
+
+{% figure caption="A figure can wrap other content. This one wraps a stat." %}
+{% stat value="3" label="sample guards that block" /%}
+{% /figure %}
+
+{% art name="seven-falls" height=300 width="full" seed=5 caption="The same piece at full width." /%}
+
+The end of the kit.

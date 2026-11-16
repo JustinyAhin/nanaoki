@@ -4,12 +4,12 @@ Your coding agent keeps making the same mistake. It fixed it last month, in anot
 
 `nanaoki` reads the Claude Code and Codex history already on your machine and finds the errors your agents keep hitting. When one comes back, the agent gets the fix that worked last time. Everything runs locally, with no LLM, no network calls and no account.
 
-I ran it on 9 months of my own history (3,030 Codex sessions, about 18K tool errors):
+I ran it on 9 months of my own history (3,033 Codex sessions, about 19K tool errors):
 
-- 40% of the errors from Sep to Nov were ones my agents had already hit and fixed between Feb and Aug.
-- 68% of those repeats had the fix only in a different project.
-- One zsh quoting error showed up in 465 sessions across 54 projects.
-- I typed some version of "don't make any changes yet" in 181 sessions.
+- 43% of the errors from Sep to Nov were ones my agents had already hit and fixed between Feb and Aug.
+- 69% of those repeats had the fix only in a different project.
+- One zsh quoting error showed up in 471 sessions across 56 projects.
+- I typed some version of "don't make any changes yet" in 183 sessions.
 
 ## What it looks like
 

@@ -2,7 +2,7 @@
 
 > nanaoki reads the Claude Code and Codex history already on a machine, finds the errors coding agents repeat, and shows the agent the fix that worked last time when the same error comes back. It is one Go binary. It runs locally, with no LLM, no network calls and no account. MIT license.
 
-On the author's own 9 months of history, 40% of the errors from Sep to Nov had a cause the agents had already fixed between Feb and Aug, and 68% of those repeats had the fix only in a different project. In a replay of 108 real cases on that data, lessons shown at the moment of the error prevented 53-59% of repeats, against about 31% for an AGENTS.md written from the same history.
+On the author's own 9 months of history, 43% of the errors from Sep to Nov had a cause the agents had already fixed between Feb and Aug, and 69% of those repeats had the fix only in a different project. In a replay of 108 real cases on that data, lessons shown at the moment of the error prevented 53-59% of repeats, against about 31% for an AGENTS.md written from the same history.
 
 ## Install (for agents doing this for a user)
 

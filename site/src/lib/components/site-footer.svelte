@@ -1,10 +1,12 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
+	import { page } from '$app/state';
 
 	import { SITE } from '#lib/site.ts';
 	import Brand from './brand.svelte';
+	import Seal from './seal.svelte';
 
-	type Props = { current?: 'home' | 'cases' };
+	type Props = { current?: 'home' | 'cases' | 'blog' };
 
 	let { current }: Props = $props();
 
@@ -86,14 +88,7 @@
 				<p class="ja" lang="ja">七転び八起き</p>
 				<div class="side">
 					<p class="romaji">Nana korobi ya oki</p>
-					<!-- The seal reads top to bottom, right column first: 七転 then 八起. -->
-					<svg class="hanko" viewBox="0 0 46 46" aria-hidden="true">
-						<rect x="1" y="1" width="44" height="44" rx="4" fill="var(--accent)" />
-						<text x="32" y="20">七</text>
-						<text x="32" y="39">転</text>
-						<text x="14" y="20">八</text>
-						<text x="14" y="39">起</text>
-					</svg>
+					<Seal />
 				</div>
 			</div>
 		</div>
@@ -102,6 +97,9 @@
 	<div class="wrap foot">
 		<nav aria-label="Footer">
 			<a href={resolve('/cases')}>Cases</a>
+			{#if page.data.hasBlog}
+				<a href={resolve('/blog')}>Blog</a>
+			{/if}
 			<!-- eslint-disable svelte/no-navigation-without-resolve -- External URLs. -->
 			<a href={SITE.repo}>GitHub</a>
 			<a href={SITE.releases}>Releases</a>
@@ -223,19 +221,6 @@
 		white-space: nowrap;
 	}
 
-	.hanko {
-		width: 46px;
-		height: 46px;
-		display: block;
-		transform: rotate(-2deg);
-	}
-
-	.hanko text {
-		font: 500 17px var(--mincho);
-		fill: #fff;
-		text-anchor: middle;
-	}
-
 	/* links */
 	.foot {
 		display: flex;
@@ -308,9 +293,8 @@
 			letter-spacing: 0.26em;
 		}
 
-		.hanko {
-			width: 40px;
-			height: 40px;
+		.side {
+			--seal-size: 40px;
 		}
 	}
 

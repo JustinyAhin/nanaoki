@@ -20,19 +20,19 @@
 
 	const stats = [
 		{
-			value: '40%',
+			value: '43%',
 			text: 'of the errors from Sep to Nov were ones my agents had already hit and fixed between Feb and Aug.'
 		},
 		{
-			value: '68%',
+			value: '69%',
 			text: 'of those repeats had the fix only in a different project. The next repo started from zero.'
 		},
 		{
-			value: '465',
-			text: 'sessions across 54 projects hit the same zsh quoting error. The agent adds quotes and moves on, every time.'
+			value: '471',
+			text: 'sessions across 56 projects hit the same zsh quoting error. The agent adds quotes and moves on, every time.'
 		},
 		{
-			value: '181',
+			value: '183',
 			text: 'sessions where I typed some version of "don\'t make any changes yet". I repeat myself too.'
 		}
 	];
@@ -60,7 +60,7 @@
 		<div class="numbers-head">
 			<h3>So I counted, on my own history.</h3>
 			<p>
-				9 months of Claude Code and Codex logs from my laptop. 3,030 Codex sessions, about 18K tool
+				9 months of Claude Code and Codex logs from my laptop. 3,033 Codex sessions, about 19K tool
 				errors.
 			</p>
 		</div>

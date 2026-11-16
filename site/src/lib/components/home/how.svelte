@@ -53,9 +53,9 @@
 					<h3>Your number, in one command</h3>
 					<p>
 						How many errors in the last third of your history had a cause that an earlier session
-						already fixed, and in which project. (My 40% uses a fixed Feb-Aug / Sep-Nov split.
+						already fixed, and in which project. (My 43% uses a fixed Feb-Aug / Sep-Nov split.
 						<code>auto</code>
-						picks its own thirds, so this screenshot says 41%.)
+						picks its own thirds, so this screenshot says 42%.)
 					</p>
 				</figcaption>
 				<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- Links to the full-size image file. -->
@@ -64,7 +64,7 @@
 						src={reportRaf}
 						width="1898"
 						height="948"
-						alt="nanaoki report, repeat-after-fix section: 2,323 of 5,698 error episodes hit a cause that was already fixed, with a table of the top repeated causes."
+						alt="nanaoki report, repeat-after-fix section: 2,454 of 5,849 error episodes hit a cause that was already fixed, with a table of the top repeated causes."
 						loading="lazy"
 						decoding="async"
 					/>

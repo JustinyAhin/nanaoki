@@ -15,6 +15,9 @@
 		ogType?: 'website' | 'article';
 		pageType?: 'WebPage' | 'CollectionPage';
 		mainEntity?: StructuredData;
+		// A post can bring its own card. It must be 1200x630 like the site card.
+		image?: { path: string; alt: string };
+		published?: string;
 	};
 
 	let {
@@ -24,12 +27,14 @@
 		socialDescription = description,
 		ogType = 'website',
 		pageType = 'WebPage',
-		mainEntity
+		mainEntity,
+		image: card = { path: SITE.ogImage.path, alt: SITE.ogImage.alt },
+		published
 	}: Props = $props();
 
 	const isError = $derived(page.status >= 400);
 	const url = $derived(isError ? undefined : canonicalUrl({ path: page.url.pathname }));
-	const image = absoluteUrl({ path: SITE.ogImage.path });
+	const image = $derived(absoluteUrl({ path: card.path }));
 	const siteUrl = canonicalUrl({ path: '/' });
 
 	const website = {
@@ -52,7 +57,7 @@
 				description,
 				inLanguage: 'en',
 				isPartOf: { '@id': website['@id'] },
-				primaryImageOfPage: { '@type': 'ImageObject', url: image, caption: SITE.ogImage.alt },
+				primaryImageOfPage: { '@type': 'ImageObject', url: image, caption: card.alt },
 				mainEntity
 			}
 		]
@@ -78,13 +83,16 @@
 	<meta property="og:image" content={image} />
 	<meta property="og:image:width" content={String(SITE.ogImage.width)} />
 	<meta property="og:image:height" content={String(SITE.ogImage.height)} />
-	<meta property="og:image:alt" content={SITE.ogImage.alt} />
+	<meta property="og:image:alt" content={card.alt} />
+	{#if published}
+		<meta property="article:published_time" content={published} />
+	{/if}
 
 	<meta name="twitter:card" content="summary_large_image" />
 	<meta name="twitter:title" content={socialTitle} />
 	<meta name="twitter:description" content={socialDescription} />
 	<meta name="twitter:image" content={image} />
-	<meta name="twitter:image:alt" content={SITE.ogImage.alt} />
+	<meta name="twitter:image:alt" content={card.alt} />
 
 	{#if !isError}
 		<!-- eslint-disable-next-line svelte/no-at-html-tags -- JSON-LD is serialized and HTML-escaped before insertion. -->

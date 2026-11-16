@@ -1,11 +1,12 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
+	import { page } from '$app/state';
 
 	import { SITE } from '#lib/site.ts';
 	import Brand from './brand.svelte';
 	import GithubMark from './github-mark.svelte';
 
-	type Props = { current?: 'home' | 'cases' };
+	type Props = { current?: 'home' | 'cases' | 'blog' };
 
 	let { current }: Props = $props();
 
@@ -20,6 +21,9 @@
 		<!-- eslint-disable svelte/no-navigation-without-resolve -- Fragments on the resolved home path. -->
 		<a class="hide-sm" href={onHome ? '#how' : `${home}#how`}>How it works</a>
 		<a href={resolve('/cases')} aria-current={current === 'cases' ? 'page' : undefined}>Cases</a>
+		{#if page.data.hasBlog}
+			<a href={resolve('/blog')} aria-current={current === 'blog' ? 'page' : undefined}>Blog</a>
+		{/if}
 		<a class="hide-sm" href={onHome ? '#install' : `${home}#install`}>Install</a>
 		<!-- eslint-enable svelte/no-navigation-without-resolve -->
 		{#if onHome}

@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>nanaoki blog card: announcing-nanaoki</title>
+<!-- The ground and type of the site card (v2-ab.html) with the "other-repo" piece of the post. Render: site/og/render-blog.sh announcing-nanaoki -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Newsreader:opsz,wght@6..72,400&display=swap" rel="stylesheet">
+<style>
+  html, body { margin: 0; background: #111213; }
+  canvas { display: block; width: 1200px; height: 630px; }
+</style>
+</head>
+<body>
+<canvas id="c" width="2400" height="1260"></canvas>
+<script>
+const W = 1200, H = 630, M = 60;
+const INK = '236,235,230';
+const SOFT = '150,147,139';
+const SERIF = '"Newsreader", Georgia, serif';
+const MONO = '"IBM Plex Mono", ui-monospace, Menlo, monospace';
+const GOLD = [[0, '#8d6a22'], [.3, '#cfa54a'], [.55, '#f2dc9c'], [.7, '#c2963a'], [.85, '#e9cd82'], [1, '#fbf0c8']];
+const g = document.getElementById('c').getContext('2d');
+g.scale(2, 2);
+
+function ground() {
+  g.fillStyle = '#111213'; g.fillRect(0, 0, W, H);
+  const light = g.createRadialGradient(1000, 110, 0, 1000, 110, 700);
+  light.addColorStop(0, 'rgba(70,64,52,.55)');
+  light.addColorStop(.5, 'rgba(38,36,33,.3)');
+  light.addColorStop(1, 'rgba(17,18,19,0)');
+  g.fillStyle = light; g.fillRect(0, 0, W, H);
+}
+
+function trace(points) {
+  g.beginPath(); g.moveTo(points[0][0], points[0][1]);
+  for (let i = 1; i < points.length; i++) g.lineTo(points[i][0], points[i][1]);
+  g.stroke();
+}
+
+function goldLine(points, from, to, lead, width, glow) {
+  const start = lead[0];
+  const grad = g.createLinearGradient(start, 0, to, 0);
+  const at = (x) => Math.min(1, Math.max(0, (x - start) / (to - start)));
+  grad.addColorStop(0, lead[1]);
+  GOLD.forEach(([s, c]) => grad.addColorStop(at(from + (to - from) * s), c));
+  g.lineCap = 'round'; g.lineJoin = 'round';
+  g.save(); g.shadowColor = 'rgba(226,180,84,.55)'; g.shadowBlur = glow;
+  g.strokeStyle = 'rgba(226,180,84,.25)'; g.lineWidth = width + .2; trace(points); g.restore();
+  g.strokeStyle = grad; g.lineWidth = width; trace(points);
+}
+
+// The dip of the post's "other-repo" piece: it falls like the card lines and comes back level.
+function dip(x, y, width, depth) {
+  const out = [];
+  for (let k = 1; k <= 60; k++) {
+    const u = k / 60;
+    out.push([x + width * u, y + depth * Math.pow(Math.sin(Math.PI * Math.pow(u, 1.8)), 2)]);
+  }
+  return out;
+}
+
+// Two repos. Above, one line dips once and is gold from there. Below, the same line dips again and again.
+function otherRepo(top, bottom) {
+  const LINES = 5, GAP = 10, DIP_W = 118, DEPTH = 50;
+  const band = (centre, dips, fixed) => {
+    for (let i = 0; i < LINES; i++) {
+      const y = centre + (i - (LINES - 1) / 2) * GAP;
+      g.lineCap = 'butt'; g.lineJoin = 'round'; g.lineWidth = 1.5;
+      g.strokeStyle = `rgba(${SOFT},${.4 + .1 * i})`;
+      if (i < LINES - 1) { trace([[-10, y], [W + 10, y]]); continue; }
+      const points = [[-10, y]];
+      for (const x of dips) points.push([x, y], ...dip(x, y, DIP_W, DEPTH));
+      points.push([W + 10, y]);
+      if (fixed) {
+        g.strokeStyle = `rgb(${SOFT})`; trace(points.slice(0, 2));
+        goldLine(points.slice(1), dips[0] + DIP_W * .5, W, [dips[0], `rgb(${SOFT})`], 2.8, 30);
+        continue;
+      }
+      const stroke = g.createLinearGradient(0, 0, W, 0);
+      stroke.addColorStop(0, `rgb(${SOFT})`);
+      for (const x of dips) {
+        const a = x / W, b = (x + DIP_W) / W;
+        stroke.addColorStop(a, `rgb(${SOFT})`);
+        stroke.addColorStop(a + (b - a) * .2, `rgb(${INK})`);
+        stroke.addColorStop(b - (b - a) * .15, `rgb(${INK})`);
+        stroke.addColorStop(b, `rgb(${SOFT})`);
+      }
+      g.strokeStyle = stroke; g.lineWidth = 1.8; trace(points);
+    }
+  };
+  band(top, [330], true);
+  band(bottom, [600, 740, 880], false);
+}
+
+function title(y, size, lead) {
+  g.textBaseline = 'alphabetic'; g.textAlign = 'left';
+  g.font = `400 ${size}px ${SERIF}`; g.letterSpacing = `${-size * .018}px`;
+  g.fillStyle = `rgb(${INK})`;
+  g.fillText('Announcing nanaoki:', M - 3, y);
+  g.fillText('your agent already fixed this', M - 3, y + lead);
+  g.letterSpacing = '0px';
+}
+
+function marks(y) {
+  g.textBaseline = 'alphabetic'; g.textAlign = 'left';
+  g.font = `400 40px ${SERIF}`; g.letterSpacing = '-0.7px';
+  g.fillStyle = `rgb(${INK})`; g.fillText('nanaoki', M - 1, y);
+  g.letterSpacing = '0px';
+  g.font = `400 24px ${MONO}`; g.textAlign = 'right';
+  g.fillStyle = '#8f8b82';
+  g.fillText('nanaoki.com/blog', W - M, y);
+  g.textAlign = 'left';
+}
+
+function draw() {
+  ground();
+  title(128, 76, 88);
+  otherRepo(312, 428);
+  marks(578);
+}
+
+Promise.all([
+  document.fonts.load(`400 76px "Newsreader"`),
+  document.fonts.load(`400 24px "IBM Plex Mono"`),
+]).then(() => document.fonts.ready).then(() => { draw(); document.title = 'ready'; });
+</script>
+</body>
+</html>
