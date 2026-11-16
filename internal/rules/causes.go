@@ -27,12 +27,15 @@ var (
 var Version string
 
 func init() {
+	lr := readLocalRules(LocalRulesPath())
+	PromptRules = mergePrompts(PromptRules, lr)
+	table := mergeCauses(causeTable, lr)
 	h := sha256.New()
-	for _, d := range causeTable {
+	for _, d := range table {
 		h.Write([]byte(d.ID + "\x00" + d.Scope + "\x00" + d.Rx + "\x00" + d.CmdRx + "\x01"))
 	}
 	Version = hex.EncodeToString(h.Sum(nil))[:16]
-	for _, d := range causeTable {
+	for _, d := range table {
 		c := cause{causeDef: d, rx: py(d.Rx, "(?im)")}
 		if d.CmdRx != "" {
 			c.crx = py(d.CmdRx, "(?i)")

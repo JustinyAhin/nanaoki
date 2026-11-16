@@ -4,3 +4,8 @@
 
 # Cloudflare
 site/.wrangler/
+
+# Local only: private research repo and private agent rules
+/private
+/CLAUDE.local.md
+/AGENTS.override.md

@@ -137,7 +137,14 @@ var hookable = map[string]string{
 	"classifier_bot_check": "PreToolUse hook on Bash: block curl with a spoofed browser User-Agent; point to the web-access route.",
 	"port_in_use":          "PreToolUse hook on dev-server starts: check the port with lsof first.",
 	"edit_before_read":     "PreToolUse hook on Edit/Write: require a Read of the file first.",
-	"ssh_vps_user":         "PreToolUse hook on Bash: rewrite the ssh target to the working user@host.",
+}
+
+// hookFix is the hook suggestion for a cause: from the local rules first, then the built-in list.
+func hookFix(id string) string {
+	if s := rules.LocalHookFix[id]; s != "" {
+		return s
+	}
+	return hookable[id]
 }
 
 func suggest(r *Report, top int) []Suggestion {
@@ -173,8 +180,8 @@ func suggest(r *Report, top int) []Suggestion {
 			break
 		}
 		switch {
-		case c.kind == "cause" && hookable[c.k] != "":
-			add(Suggestion{Type: "hook", Target: "agent hooks (Claude Code settings.json, Codex hooks)", Text: hookable[c.k], For: c.key, Count: c.count})
+		case c.kind == "cause" && hookFix(c.k) != "":
+			add(Suggestion{Type: "hook", Target: "agent hooks (Claude Code settings.json, Codex hooks)", Text: hookFix(c.k), For: c.key, Count: c.count})
 		case c.kind == "cause" && rules.Scope[c.k] == "env":
 			add(Suggestion{Type: "environment fact", Target: "global ~/.claude/CLAUDE.md and ~/.codex/AGENTS.md", Text: rules.Lesson[c.k], For: c.key, Count: c.count})
 		case c.kind == "cause":
