@@ -388,6 +388,9 @@ func cmdRow(b base, cmd any, ecv any, status string, outp any, cwd string) Row {
 	} else if cmdSet {
 		classIn = cmdText
 	}
+	if !isErr && rules.HiddenFailure(classIn, pyStr(or(outp, ""))) {
+		isErr = true
+	}
 	r := b.row(rules.EventTypeForCall(classIn, isErr))
 	r.Tool = "shell"
 	r = withText(r, cmdText, cmdSet)

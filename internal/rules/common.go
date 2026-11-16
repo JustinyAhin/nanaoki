@@ -112,6 +112,21 @@ func CommandClass(c string) string {
 	return ""
 }
 
+// runnerFailRx: lines that only a package runner prints when the script it ran failed. They are not
+// compiler or test messages, so a grep in the same command cannot make them up from source text.
+var runnerFailRx = py(`(?m)^\s*(error: script "[^"]+" exited with code [1-9]|(ELIFECYCLE\s+)?Command failed with exit code [1-9]|`+
+	`error Command failed with exit code [1-9]|npm (ERR!|error) (code|Lifecycle script)\b)`, "")
+
+// HiddenFailure reports whether a build, test or deploy command that exited 0 still failed: a pipe or a
+// ; chain (`bun run check | tail -5`, `pnpm build; echo done`) returns the exit code of its last command.
+func HiddenFailure(cmd, out string) bool {
+	switch CommandClass(cmd) {
+	case "build_result", "test_result", "deploy":
+		return runnerFailRx.MatchString(out)
+	}
+	return false
+}
+
 func EventTypeForCall(cmd string, isError bool) string {
 	if k := CommandClass(cmd); k != "" {
 		return k

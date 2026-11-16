@@ -42,3 +42,27 @@ func TestIsProbe(t *testing.T) {
 		}
 	}
 }
+
+func TestHiddenFailure(t *testing.T) {
+	hidden := []struct{ cmd, out string }{
+		{"bun run check 2>&1 | tail -3", "✘ [ERROR] Types are out of date.\nerror: script \"check\" exited with code 1"},
+		{"pnpm build; echo done", " ELIFECYCLE  Command failed with exit code 2.\ndone"},
+		{"yarn test | tail", "error Command failed with exit code 1."},
+		{"npm run build | tail -2", "npm error code 1\nnpm error path /x"},
+	}
+	for _, h := range hidden {
+		if !HiddenFailure(h.cmd, h.out) {
+			t.Errorf("HiddenFailure(%q) = false", h.cmd)
+		}
+	}
+	ok := []struct{ cmd, out string }{
+		{"bun run check | tail -1", "COMPLETED 518 FILES 0 ERRORS 0 WARNINGS"},
+		{"cat build.log", "error: script \"check\" exited with code 1"}, // not a build command
+		{"bun run build", "the docs say: error: script \"x\" exited with code 1 when it fails"},
+	}
+	for _, o := range ok {
+		if HiddenFailure(o.cmd, o.out) {
+			t.Errorf("HiddenFailure(%q) = true", o.cmd)
+		}
+	}
+}

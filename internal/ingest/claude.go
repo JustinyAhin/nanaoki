@@ -114,6 +114,9 @@ func parseClaude(path, rel string) ([]Row, error) {
 				out := blockText(m["content"])
 				isErr := truthy(m["is_error"])
 				name := str(pc.name)
+				if !isErr && name == "Bash" && rules.HiddenFailure(pc.cmd, out) {
+					isErr = true
+				}
 				var ec NInt
 				if mm := exitRe.FindStringSubmatch(out); mm != nil {
 					n, _ := strconv.ParseInt(mm[1], 10, 64)

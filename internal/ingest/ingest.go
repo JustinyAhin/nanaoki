@@ -39,7 +39,7 @@ type result struct {
 
 // ParserVersion changes when a parser reads new fields from files that did not change. A store built by
 // another version reads every file again once.
-const ParserVersion = "2"
+const ParserVersion = "3"
 
 var derivedSources = []string{"codex_sqlite", "claude_history", "codex_history"}
 
