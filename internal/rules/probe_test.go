@@ -13,6 +13,9 @@ func TestIsProbe(t *testing.T) {
 		{"rg -n 'TODO' src", "Exit code 1"},
 		{"grep -q foo bar.txt", ""},
 		{"some-cmd &>/dev/null", "Exit code 2"},
+		{"cd /repo; git ls-files docs | head -30; git check-ignore -v docs/a.txt 2>&1", "Exit code 1\ndocs/b.md"},
+		{"git diff --quiet -- src", "Exit code 1"},
+		{"cd /repo\ntest -f 'a;b'", "Exit code 1"},
 	}
 	for _, p := range probes {
 		if !IsProbe(p.cmd, p.out) {
@@ -28,6 +31,10 @@ func TestIsProbe(t *testing.T) {
 		{"test -f a && bun test", "1 failing"},
 		{"cmd 2>/dev/null", "Traceback (most recent call last):"},
 		{"", "Exit code 1"},
+		{"git check-ignore x && bun run build", "Exit code 1"},
+		{"bun run build; git check-ignore dist | wc -l", "Exit code 1"},
+		{"git check-ignore x; echo \"$(cat y; test -f z)\"", "Exit code 1"},
+		{"git diff --stat", "Exit code 1"},
 	}
 	for _, r := range real {
 		if IsProbe(r.cmd, r.out) {

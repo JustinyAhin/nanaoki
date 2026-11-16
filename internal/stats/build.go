@@ -129,10 +129,19 @@ type Health struct {
 	WithOutput   int            `json:"with_output"`
 	Errors       int            `json:"errors"`
 	HookLogLines []string       `json:"hook_log"`
+	Failures     []HookFailure  `json:"hook_failures"` // any hook (not only nanaoki) that timed out or failed, from the transcripts
 	P50          float64        `json:"p50_ms"`
 	P95          float64        `json:"p95_ms"`
 	Max          float64        `json:"max_ms"`
 	MsNote       string         `json:"ms_note"`
+}
+
+type HookFailure struct {
+	Hook    string   `json:"hook"`
+	Command string   `json:"command"`
+	Reason  string   `json:"last_reason"`
+	Count   int      `json:"count"`
+	Last    *Pointer `json:"last_event"`
 }
 
 type NoteRow struct {
@@ -417,6 +426,11 @@ func Build(db *sql.DB, o Options) (*Report, error) {
 		ms = append(ms, c.Ms)
 	}
 	r.Health.HookLogLines = hookLogErrors(o.Paths.HookLog, o.Since, o.Until)
+	if db != nil {
+		if r.Health.Failures, err = hookFailures(db, o.Since, o.Until); err != nil {
+			return nil, err
+		}
+	}
 	r.Health.P50, r.Health.P95, r.Health.Max = percentile(ms, 0.5), percentile(ms, 0.95), percentile(ms, 1)
 
 	// missing: repeat-after-fix episodes in sessions where the hook ran, with no lesson and no guard for the key
@@ -519,6 +533,11 @@ func (r *Report) Anonymize(a *anon.Anon) {
 	for i := range r.Notes {
 		n := &r.Notes[i]
 		n.Project, n.Session, n.Text = a.Project(n.Project), a.Session(n.Session), a.Text(n.Text)
+	}
+	for i := range r.Health.Failures {
+		f := &r.Health.Failures[i]
+		f.Command, f.Reason = a.Text(f.Command), a.Text(f.Reason)
+		anonPtr(a, f.Last)
 	}
 	for i, l := range r.Health.HookLogLines {
 		r.Health.HookLogLines[i] = a.Text(l)

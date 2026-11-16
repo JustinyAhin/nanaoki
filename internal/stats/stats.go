@@ -347,6 +347,38 @@ func hookLogErrors(path, since, until string) []string {
 	return out
 }
 
+// hookFailures groups the hook_error events of the period by hook and command, most frequent first.
+func hookFailures(db *sql.DB, since, until string) ([]HookFailure, error) {
+	rs, err := db.Query(`select id, ts, coalesce(tool,''), coalesce(text,''), coalesce(output,''), coalesce(raw_file,''),
+		coalesce(raw_line,0) from events where event_type='hook_error' and ts is not null order by ts`)
+	if err != nil {
+		return nil, err
+	}
+	defer rs.Close()
+	idx := map[string]int{}
+	var out []HookFailure
+	for rs.Next() {
+		var e Event
+		if err := rs.Scan(&e.ID, &e.Ts, &e.Tool, &e.Cmd, &e.Out, &e.RawFile, &e.RawLine); err != nil {
+			return nil, err
+		}
+		if !inWindow(e.Ts, since, until) {
+			continue
+		}
+		k := e.Tool + "\x00" + e.Cmd
+		i, ok := idx[k]
+		if !ok {
+			i = len(out)
+			idx[k] = i
+			out = append(out, HookFailure{Hook: e.Tool, Command: e.Cmd})
+		}
+		out[i].Count++
+		out[i].Reason, out[i].Last = e.Out, e.ptr()
+	}
+	sort.SliceStable(out, func(i, j int) bool { return out[i].Count > out[j].Count })
+	return out, rs.Err()
+}
+
 func percentile(xs []float64, p float64) float64 {
 	if len(xs) == 0 {
 		return 0

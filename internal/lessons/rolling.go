@@ -281,7 +281,12 @@ const RepoSignalMin = 2
 var (
 	prefRx = rules.Py(`\b(always|never|don't|do not|dont|make sure|must|prefer|only when|without|instead of|`+
 		`before you|remember|no need to|stop|avoid|use \w+ (for|instead|not))\b`, "(?i)")
-	notPrefRx   = rules.Py(`\b(i|we) (don't|do not) (know|understand|think)|what do you think`, "(?i)")
+	notPrefRx = rules.Py(`\b(i|we) (don't|do not) (know|understand|think)|what do you think`, "(?i)")
+	// Instructions for the current task only: "don't make any changes yet", "plan only", "do not read or change
+	// files". Shown again in a later session as a rule, they stop the agent from doing its work.
+	taskOnlyRx = rules.Py(`\b(yet|for now|right now)\W*$|\b(plan|review|check|audit|analysis|research) only\b|`+
+		`\bjust (check|look|review|read|investigate)\b|`+
+		`\b(don't|do not|dont)\s+(read or\s+)?(make|edit|change|modify|touch|write)\s+(any\s+)?(changes?|edits?|files|code|anything)\W*$`, "(?i)")
 	bareSkillRx = rules.Py(`^\s*(/[\w:.-]+|\[\$[\w:.-]+\]\([^)]*\))(\s*(,|and)?\s*(copy|shorten|copy to my clipboard|`+
 		`and copy to my clipboard|shorten and copy to my clipboard)?)*\s*$`, "(?i)")
 	nsURL   = rules.Py(`https?://\S+`, "")
@@ -347,7 +352,8 @@ func PrefSentences(text string) [][2]string {
 	for _, part := range SplitSentences(text) {
 		part = rules.Strip(part)
 		n := rules.RuneLen(part)
-		if n < 25 || n > 260 || !prefRx.MatchString(part) || strings.HasSuffix(part, "?") || notPrefRx.MatchString(part) {
+		if n < 25 || n > 260 || !prefRx.MatchString(part) || strings.HasSuffix(part, "?") || notPrefRx.MatchString(part) ||
+			taskOnlyRx.MatchString(part) {
 			continue
 		}
 		ns := NormSentence(part)

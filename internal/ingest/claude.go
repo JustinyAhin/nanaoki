@@ -3,6 +3,7 @@ package ingest
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"regexp"
 	"strconv"
 	"strings"
@@ -21,6 +22,7 @@ type clLine struct {
 	IsMeta      any `json:"isMeta"`
 	Origin      any `json:"origin"`
 	Message     any `json:"message"`
+	Attachment  any `json:"attachment"`
 }
 
 type pendingCall struct {
@@ -33,6 +35,7 @@ type pendingCall struct {
 var (
 	userTag = []byte(`"type":"user"`)
 	asstTag = []byte(`"type":"assistant"`)
+	hookTag = []byte(`{"type":"hook_`)
 )
 
 // parseClaude: rel is the path shown in pointers (~/.claude/projects/...).
@@ -43,7 +46,8 @@ func parseClaude(path, rel string) ([]Row, error) {
 	var rows []Row
 	err := eachLine(path, nil, func(ln int, line []byte) {
 		// Fast skip: a user/assistant line always contains its compact type tag.
-		if !bytes.Contains(line, userTag) && !bytes.Contains(line, asstTag) {
+		isHook := bytes.Contains(line, hookTag)
+		if !isHook && !bytes.Contains(line, userTag) && !bytes.Contains(line, asstTag) {
 			return
 		}
 		var o clLine
@@ -51,13 +55,19 @@ func parseClaude(path, rel string) ([]Row, error) {
 			return
 		}
 		t := str(o.Type)
-		if t != "user" && t != "assistant" {
+		if t != "user" && t != "assistant" && t != "attachment" {
 			return
 		}
 		b := base{Source: "claude_transcript", Agent: "claude", SessionID: str(o.SessionID), Cwd: str(o.Cwd),
 			Ts: str(o.Timestamp), RawFile: rel, RawLine: nint(int64(ln))}
 		if truthy(o.IsSidechain) || sideFile {
 			b.Side = 1
+		}
+		if t == "attachment" {
+			if r, ok := hookFailure(b, o.Attachment); ok {
+				rows = append(rows, r)
+			}
+			return
 		}
 		c := get(o.Message, "content")
 		if t == "assistant" {
@@ -149,6 +159,40 @@ func parseClaude(path, rel string) ([]Row, error) {
 		rows = append(rows, withText(r, pc.cmd, pc.ok).finish())
 	}
 	return rows, err
+}
+
+// hookFailure turns a failed hook attachment into a hook_error row. Claude Code writes a timed-out hook as
+// {"type":"hook_cancelled","timedOut":true,...}. is_error stays NULL: a hook that fails is a setup problem,
+// not a mistake of the agent, so the report and the lessons do not count it.
+func hookFailure(b base, a any) (Row, bool) {
+	typ := str(get(a, "type"))
+	var msg string
+	switch {
+	case typ == "hook_cancelled" && truthy(get(a, "timedOut")):
+		msg = fmt.Sprintf("timed out after %s (ran %s)", secs(get(a, "timeoutMs")), secs(get(a, "durationMs")))
+	case typ == "hook_cancelled":
+		msg = "cancelled"
+	case strings.HasPrefix(typ, "hook_") && strings.Contains(typ, "error"):
+		msg = strings.TrimSpace(str(or(get(a, "stderr"), get(a, "content"), get(a, "error"))))
+		if msg == "" {
+			msg = strings.TrimPrefix(typ, "hook_")
+		}
+	default:
+		return Row{}, false
+	}
+	r := b.row("hook_error")
+	r.Tool = str(or(get(a, "hookName"), get(a, "hookEvent")))
+	r = withText(r, trs(str(get(a, "command")), maxCmd), true)
+	r = withOutput(r, trs(msg, errOut), true)
+	return r.finish(), true
+}
+
+func secs(v any) string {
+	ms, ok := v.(float64)
+	if !ok {
+		return "?"
+	}
+	return strconv.FormatFloat(ms/1000, 'f', -1, 64) + "s"
 }
 
 func hasToolResult(list []any) bool {

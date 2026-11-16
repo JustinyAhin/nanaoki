@@ -10,6 +10,8 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/JustinyAhin/nanaoki/internal/rules"
 )
 
 type Store struct {
@@ -140,12 +142,15 @@ func (s *Store) Retrieve(tr Trigger, k int) []Hit {
 	for _, x := range tr.SessStacks {
 		stacks[x] = true
 	}
-	for x := range s.PStacks[tr.Project] {
-		stacks[x] = true
+	own := !rules.Bucket(tr.Project)
+	if own {
+		for x := range s.PStacks[tr.Project] {
+			stacks[x] = true
+		}
 	}
 	add := func(L *Lesson, base float64, why string) {
 		sc := base
-		if L.Projects[tr.Project] > 0 {
+		if own && L.Projects[tr.Project] > 0 {
 			sc += 1.0
 			why += "+project"
 		}
@@ -190,7 +195,7 @@ func (s *Store) Retrieve(tr Trigger, k int) []Hit {
 			ov := s.Overlap(q, L)
 			if ov >= 0.25 {
 				add(L, 4.0*ov, "text"+strconv.FormatFloat(ov, 'f', 2, 64))
-			} else if tr.Kind == "session_start" && L.Projects[tr.Project] > 0 {
+			} else if tr.Kind == "session_start" && own && L.Projects[tr.Project] > 0 {
 				add(L, 1.0, "brief")
 			}
 		}
@@ -229,7 +234,11 @@ const (
 // overlaps the first message (>= 0.25), it comes from this repo or a repo with shared stack signals (node alone
 // does not count), and it was seen in 2+ sessions. Top k.
 func (s *Store) RetrieveStartStrict(tr Trigger, repoStacks func(p string) map[string]bool, k int) []Hit {
-	here := repoStacks(tr.Project)
+	own := !rules.Bucket(tr.Project)
+	here := map[string]bool{}
+	if own {
+		here = repoStacks(tr.Project)
+	}
 	q := TokSet(tr.Text)
 	type cand struct {
 		h   Hit
@@ -244,12 +253,15 @@ func (s *Store) RetrieveStartStrict(tr Trigger, repoStacks func(p string) map[st
 		if ov == 0 || ov < StartMinOverlap {
 			continue
 		}
-		same := L.Projects[tr.Project] > 0
+		same := own && L.Projects[tr.Project] > 0
 		lst := map[string]bool{}
 		for _, x := range L.Stacks {
 			lst[x] = true
 		}
 		for p := range L.Projects {
+			if rules.Bucket(p) {
+				continue
+			}
 			for x := range repoStacks(p) {
 				lst[x] = true
 			}

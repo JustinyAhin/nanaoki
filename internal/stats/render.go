@@ -172,6 +172,14 @@ func Render(w io.Writer, r *Report, format string, st style.Style) error {
 		}
 		p("%s", clip(l, 160))
 	}
+	if len(hl.Failures) > 0 {
+		var rows [][]string
+		for _, f := range hl.Failures {
+			rows = append(rows, []string{fmt.Sprint(f.Count), f.Hook, clip(f.Command, 60), clip(f.Reason, 50)})
+		}
+		p("Hooks that failed in the transcripts (any hook, not only nanaoki):")
+		tbl([]string{"Times", "Hook", "Command", "Last reason"}, rows)
+	}
 
 	bl := r.Baseline
 	h(6, "Baseline (rough before/after)")

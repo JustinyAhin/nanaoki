@@ -37,6 +37,10 @@ type result struct {
 	err  error
 }
 
+// ParserVersion changes when a parser reads new fields from files that did not change. A store built by
+// another version reads every file again once.
+const ParserVersion = "2"
+
 var derivedSources = []string{"codex_sqlite", "claude_history", "codex_history"}
 
 // Run builds or updates the store. Files whose (path, size, mtime) did not change are skipped.
@@ -85,11 +89,14 @@ func Run(o Options) (Stats, error) {
 		}
 	}
 	rs.Close()
+	var pver string
+	_ = db.QueryRow(`select v from meta where k='parser_version'`).Scan(&pver)
+	reparse := len(prev) > 0 && pver != ParserVersion
 	present := map[string]bool{}
 	var todo []SrcFile
 	for _, f := range files {
 		present[f.Path] = true
-		if k, ok := prev[f.Path]; ok && k.size == f.Size && k.mtime == f.Mtime {
+		if k, ok := prev[f.Path]; ok && !reparse && k.size == f.Size && k.mtime == f.Mtime {
 			st.FilesUnchanged++
 			continue
 		}
@@ -306,8 +313,8 @@ func Run(o Options) (Stats, error) {
 		return st, err
 	}
 	st.Elapsed = time.Since(t0)
-	if _, err := tx.Exec(`insert or replace into meta (k, v) values ('last_ingest', ?), ('ingest_seconds', ?), ('rules_version', ?)`,
-		time.Now().UTC().Format(time.RFC3339), fmt.Sprintf("%.1f", st.Elapsed.Seconds()), rules.Version); err != nil {
+	if _, err := tx.Exec(`insert or replace into meta (k, v) values ('last_ingest', ?), ('ingest_seconds', ?), ('rules_version', ?), ('parser_version', ?)`,
+		time.Now().UTC().Format(time.RFC3339), fmt.Sprintf("%.1f", st.Elapsed.Seconds()), rules.Version, ParserVersion); err != nil {
 		return st, err
 	}
 	if err := tx.Commit(); err != nil {

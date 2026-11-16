@@ -50,10 +50,10 @@ func TestIngestFixture(t *testing.T) {
 	if st.SQLiteThreads != 2 || st.SQLiteMissing != 1 {
 		t.Errorf("sqlite threads %d missing %d, want 2 and 1", st.SQLiteThreads, st.SQLiteMissing)
 	}
-	if n := count(t, db, `select count(*) from events`); n != 33 {
-		t.Errorf("events = %d, want 33", n)
+	if n := count(t, db, `select count(*) from events`); n != 34 {
+		t.Errorf("events = %d, want 34", n)
 	}
-	bySource := map[string]int{"claude_transcript": 9, "codex_rollout": 17, "claude_history": 3, "codex_history": 2, "codex_sqlite": 2}
+	bySource := map[string]int{"claude_transcript": 10, "codex_rollout": 17, "claude_history": 3, "codex_history": 2, "codex_sqlite": 2}
 	for s, want := range bySource {
 		if n := count(t, db, `select count(*) from events where source=?`, s); n != want {
 			t.Errorf("source %s = %d, want %d", s, n, want)
@@ -101,7 +101,16 @@ func TestClaudeTranscript(t *testing.T) {
 	if n := count(t, db, `select count(*) from events where side=1 and source='claude_transcript' and tool='Read' and is_error=1`); n != 1 {
 		t.Errorf("subagent error rows = %d", n)
 	}
-	if n := count(t, db, `select count(*) from events where source='claude_transcript' and project='demo-app'`); n != 9 {
+	// a timed-out hook: its own event type, is_error NULL so the report and the lessons skip it
+	var htool, hcmd, hout string
+	if err := db.QueryRow(`select tool, text, output from events where event_type='hook_error' and is_error is null`).
+		Scan(&htool, &hcmd, &hout); err != nil {
+		t.Fatal(err)
+	}
+	if htool != "UserPromptSubmit" || hcmd != "bash ~/.claude/hooks/state.sh working" || hout != "timed out after 10s (ran 19.14s)" {
+		t.Errorf("hook row = %q %q %q", htool, hcmd, hout)
+	}
+	if n := count(t, db, `select count(*) from events where source='claude_transcript' and project='demo-app'`); n != 10 {
 		t.Errorf("project mapping: %d rows in demo-app", n)
 	}
 }
@@ -196,6 +205,19 @@ func TestIncremental(t *testing.T) {
 	if st.FilesParsed != 0 || st.FilesUnchanged != 7 {
 		t.Errorf("second run parsed %d, unchanged %d", st.FilesParsed, st.FilesUnchanged)
 	}
+	// a store from an older parser reads every file once more
+	rw, err := OpenStore(dbPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	rw.Exec(`update meta set v='old' where k='parser_version'`)
+	rw.Close()
+	if st, err = Run(Options{DB: dbPath, Paths: p}); err != nil {
+		t.Fatal(err)
+	}
+	if st.FilesParsed != 7 {
+		t.Errorf("parser version change parsed %d files, want 7", st.FilesParsed)
+	}
 	// grow one file, delete another
 	sep := filepath.Join(home, ".codex", "sessions", "2026", "09", "10", "rollout-2026-09-10T15-00-00-"+testfixture.CodexSep+".jsonl")
 	f, err := os.OpenFile(sep, os.O_APPEND|os.O_WRONLY, 0)
@@ -221,8 +243,8 @@ func TestIncremental(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer db.Close()
-	if n := count(t, db, `select count(*) from events`); n != 34 {
-		t.Errorf("events after update = %d, want 34 (deleted file kept, one new row)", n)
+	if n := count(t, db, `select count(*) from events`); n != 35 {
+		t.Errorf("events after update = %d, want 35 (deleted file kept, one new row)", n)
 	}
 	if n := count(t, db, `select count(*) from files where present=0`); n != 1 {
 		t.Errorf("files marked gone = %d", n)

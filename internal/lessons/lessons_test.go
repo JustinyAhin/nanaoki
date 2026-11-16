@@ -87,6 +87,13 @@ func TestPrefsAndStrictStart(t *testing.T) {
 	if h := st.RetrieveStartStrict(tr, func(string) map[string]bool { return nil }, StartK); len(h) != 0 {
 		t.Errorf("other repo: %+v", h)
 	}
+	// /tmp and scratch folders all map to "scratch": two of them are not the same repo
+	L := *ps[0]
+	L.Projects = map[string]int{"scratch": 2}
+	tr.Project = "scratch"
+	if h := NewStore([]*Lesson{&L}, nil).RetrieveStartStrict(tr, func(string) map[string]bool { return nil }, StartK); len(h) != 0 {
+		t.Errorf("scratch bucket counted as the same repo: %+v", h)
+	}
 }
 
 func TestPrefSentencesSkipsNonRules(t *testing.T) {
@@ -95,6 +102,18 @@ func TestPrefSentencesSkipsNonRules(t *testing.T) {
 	}
 	if ps := PrefSentences("What do you think, should we never do this again?"); ps != nil {
 		t.Errorf("question: %v", ps)
+	}
+	for _, task := range []string{"Do not read or change files.", "But do not make any changes yet.",
+		"just check but don't make any changes yet", "Produce a decision-complete implementation plan only; do not edit files."} {
+		if ps := PrefSentences(task); ps != nil {
+			t.Errorf("task-only instruction kept as a rule: %v", ps)
+		}
+	}
+	for _, rule := range []string{"Never edit the generated files in the dist folder by hand.",
+		"Don't make any changes to the lockfile without asking me first."} {
+		if ps := PrefSentences(rule); ps == nil {
+			t.Errorf("lasting rule dropped: %q", rule)
+		}
 	}
 }
 

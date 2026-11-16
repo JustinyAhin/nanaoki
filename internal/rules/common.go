@@ -30,6 +30,10 @@ func Project(cwd string) string {
 	return parts[len(parts)-1]
 }
 
+// Bucket reports whether p is a catch-all name from Project ("scratch", "home", "?") and not one repo.
+// Sessions in a bucket share nothing, so a lesson from a bucket must not count as "this project".
+func Bucket(p string) bool { return p == "" || p == "scratch" || p == "home" || p == "?" }
+
 var KEY = py(`(error|failed|failure|cannot|can\'t|not found|denied|refused|invalid|unknown|missing|no such|`+
 	`unable|timed? ?out|exception|fatal|forbidden|unauthori[sz]ed|not allowed|requires|blocked|`+
 	`expected|undefined|conflict|rejected|not permitted|ENOENT|EACCES|429|401|403|404|500|502|503)`, "(?i)")
