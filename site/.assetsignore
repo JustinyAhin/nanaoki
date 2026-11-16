@@ -1,7 +1,0 @@
-wrangler.toml
-README.md
-preview-*.png
-.assetsignore
-.wrangler
-og/
-cases/preview-*.png

@@ -1,0 +1,222 @@
+/* Shared tokens, base elements, and reusable utilities. Component CSS lives in its Svelte file. */
+@font-face {
+	/* Subset of Shippori Mincho 500 (SIL OFL 1.1) with only 七転び八起き. See README.md. */
+	font-family: 'Shippori Mincho';
+	font-style: normal;
+	font-weight: 500;
+	font-display: swap;
+	src: url('./assets/fonts/shippori-mincho-500-subset.woff2') format('woff2');
+}
+
+:root {
+	--bg: #f6f3ec;
+	--bg-2: #efebe1;
+	--card: #fbf9f4;
+	--ink: #1b1a17;
+	--ink-2: #4a4740;
+	--ink-3: #6f6b62;
+	--rule: #ddd7ca;
+	--accent: #c8402c;
+	--accent-ink: #a8321f;
+	--accent-soft: #f3dcd4;
+	--ok: #2f7a4b;
+	--ok-soft: #dcebdf;
+	--term-bg: #0d1117;
+	--term-bar: #161b22;
+	--term-rule: #30363d;
+	--term-ink: #e6edf3;
+	--term-dim: #8b949e;
+	--term-cyan: #56d4dd;
+	--term-green: #56d364;
+	--term-red: #ff7b72;
+	--term-yellow: #e3b341;
+	--serif: 'Newsreader Variable', 'Iowan Old Style', Georgia, serif;
+	--sans: 'IBM Plex Sans Variable', system-ui, -apple-system, 'Segoe UI', sans-serif;
+	--mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+	--mincho: 'Shippori Mincho', 'Hiragino Mincho ProN', 'Yu Mincho', 'Noto Serif JP', serif;
+	--max: 1120px;
+	--gutter: 24px;
+}
+
+@media (prefers-color-scheme: dark) {
+	:root {
+		--bg: #121314;
+		--bg-2: #18191b;
+		--card: #1b1c1f;
+		--ink: #ecebe6;
+		--ink-2: #c3c0b8;
+		--ink-3: #96938b;
+		--rule: #2c2d30;
+		--accent: #ef6a54;
+		--accent-ink: #ff8a76;
+		--accent-soft: #3a211c;
+		--ok: #6fcf8f;
+		--ok-soft: #1c2b21;
+		--term-bg: #0a0d12;
+		--term-bar: #12161c;
+		--term-rule: #262b33;
+	}
+}
+
+/* base */
+*,
+*::before,
+*::after {
+	box-sizing: border-box;
+}
+
+html {
+	-webkit-text-size-adjust: 100%;
+	scroll-behavior: smooth;
+}
+
+body {
+	margin: 0;
+	background: var(--bg);
+	color: var(--ink);
+	font: 400 17px/1.6 var(--sans);
+	overflow-x: hidden;
+}
+
+img {
+	max-width: 100%;
+	height: auto;
+	display: block;
+}
+
+a {
+	color: inherit;
+	text-decoration-color: color-mix(in srgb, currentColor 35%, transparent);
+	text-underline-offset: 3px;
+}
+
+a:hover {
+	text-decoration-color: currentColor;
+}
+
+code,
+kbd,
+pre {
+	font-family: var(--mono);
+}
+
+:not(pre) > code {
+	font-size: 0.88em;
+	background: var(--bg-2);
+	border: 1px solid var(--rule);
+	border-radius: 5px;
+	padding: 0.08em 0.35em;
+	overflow-wrap: anywhere;
+}
+
+:focus-visible {
+	outline: 2px solid var(--accent);
+	outline-offset: 3px;
+	border-radius: 4px;
+}
+
+h1,
+h2,
+h3 {
+	font-family: var(--serif);
+	font-weight: 400;
+	letter-spacing: -0.01em;
+	margin: 0;
+	text-wrap: balance;
+}
+
+h2 {
+	font-size: clamp(30px, 4.2vw, 44px);
+	line-height: 1.12;
+	max-width: 20ch;
+}
+
+h3 {
+	font-size: 23px;
+	line-height: 1.25;
+}
+
+p {
+	margin: 0 0 1em;
+	text-wrap: pretty;
+}
+
+section {
+	padding: 96px 0;
+	border-top: 1px solid var(--rule);
+}
+
+/* utilities */
+.wrap {
+	max-width: var(--max);
+	margin: 0 auto;
+	padding: 0 var(--gutter);
+}
+
+.eyebrow {
+	font: 500 13px/1 var(--mono);
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	color: var(--accent-ink);
+	margin: 0 0 16px;
+}
+
+.lead {
+	color: var(--ink-2);
+	font-size: 18.5px;
+	max-width: 62ch;
+	margin: 18px 0 0;
+}
+
+.small {
+	color: var(--ink-3);
+	font-size: 14.5px;
+	margin-top: 14px;
+}
+
+.btn-secondary {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	padding: 10px 16px;
+	border: 1px solid var(--rule);
+	border-radius: 8px;
+	background: var(--card);
+	color: var(--ink);
+	text-decoration: none;
+	font-weight: 500;
+	font-size: 15px;
+}
+
+.btn-secondary:hover {
+	border-color: var(--ink-3);
+}
+
+.sr {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	overflow: hidden;
+	clip: rect(0 0 0 0);
+	white-space: nowrap;
+}
+
+@media (max-width: 720px) {
+	:root {
+		--gutter: 16px;
+	}
+
+	body {
+		font-size: 16px;
+	}
+
+	section {
+		padding: 64px 0;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	html {
+		scroll-behavior: auto;
+	}
+}
