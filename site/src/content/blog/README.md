@@ -23,7 +23,7 @@ Paragraphs, `##` and `###` headings (they make the contents list), lists, links,
 
 ## Tags
 
-`width` is `text` (default), `wide` or `full` on `figure`, `terminal`, `stats`, `chart`, `compare` and `art`.
+`width` is `text` (default), `wide` or `full` on `figure`, `video`, `terminal`, `stats`, `chart`, `compare` and `art`.
 
 ````md
 {% callout type="note" title="Optional title" %}Text.{% /callout %}
@@ -34,6 +34,7 @@ A sentence.{% sidenote %}Margin note on wide screens, tap to open on phones.{% /
 
 {% figure src="/blog/slug/shot.png" alt="Required with src" caption="Optional" width="wide" /%}
 {% figure caption="A figure can also wrap other tags." %}...{% /figure %}
+{% video src="/blog/slug/film.mp4" label="Required" poster="/blog/slug/poster.jpg" caption="Optional" width="wide" /%}
 
 {% terminal title="after the failure" %}
 ```

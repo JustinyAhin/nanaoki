@@ -35,6 +35,8 @@ So the fix existed. It was on the same laptop, and the same tool had written it.
 
 I wanted to know how often this happens on the days I don't have the feeling. That question turned into a tool, and today I'm releasing it. It's called [nanaoki](https://github.com/JustinyAhin/nanaoki). It is open source, it runs on your machine, and there is no model in it. This post is the long version of why it exists and what I measured before I trusted it.
 
+{% video src="/blog/announcing-nanaoki/nanaoki-launch.mp4" poster="/blog/announcing-nanaoki/video-poster.jpg" label="Launch film: the same zsh error repeats, 43% of my agents' errors were already fixed once, and nanaoki shows the old fix" caption="The short version, in 40 seconds. It has sound." width="wide" /%}
+
 ## Counting it
 
 Claude Code and Codex both keep their session history on disk, in `~/.claude` and `~/.codex`. I wrote a script that reads all of it and puts every prompt, tool call and tool error into a local SQLite file. Later I ported it to a Go CLI. It is regexes and counting.

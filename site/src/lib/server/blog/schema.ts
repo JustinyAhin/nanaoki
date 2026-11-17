@@ -163,6 +163,17 @@ const createConfig = ({ dev }: { dev: boolean }): Config => {
 				return [];
 			}
 		},
+		video: {
+			render: 'Video',
+			selfClosing: true,
+			attributes: {
+				src: { type: String, required: true },
+				label: { type: String, required: true },
+				poster: { type: String },
+				caption: { type: String },
+				width: width()
+			}
+		},
 		terminal: {
 			attributes: {
 				title: { type: String, default: 'terminal' },

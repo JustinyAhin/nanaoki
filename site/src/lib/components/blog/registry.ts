@@ -19,6 +19,7 @@ import Step from './step.svelte';
 import Steps from './steps.svelte';
 import TableWrap from './table-wrap.svelte';
 import TerminalBlock from './terminal-block.svelte';
+import Video from './video.svelte';
 
 import type { Component } from 'svelte';
 
@@ -46,7 +47,8 @@ const COMPONENTS: Record<string, Component<any>> = {
 	Step,
 	Steps,
 	TableWrap,
-	TerminalBlock
+	TerminalBlock,
+	Video
 };
 
 export { COMPONENTS };

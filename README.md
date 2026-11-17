@@ -4,6 +4,8 @@ Your coding agent keeps making the same mistake. It fixed it last month, in anot
 
 `nanaoki` reads the Claude Code and Codex history already on your machine and finds the errors your agents keep hitting. When one comes back, the agent gets the fix that worked last time. Everything runs locally, with no LLM, no network calls and no account.
 
+[![The 40-second launch film: click to watch, with sound](assets/launch-video.jpg)](https://nanaoki.com/blog/announcing-nanaoki/nanaoki-launch.mp4)
+
 I ran it on 9 months of my own history (3,033 Codex sessions, about 19K tool errors):
 
 - 43% of the errors from Sep to Nov were ones my agents had already hit and fixed between Feb and Aug.
