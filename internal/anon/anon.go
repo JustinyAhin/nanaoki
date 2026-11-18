@@ -45,9 +45,19 @@ func New(known []string) *Anon {
 	return a
 }
 
-// words that are not private even when a project has this name
-var reserved = map[string]bool{"claude": true, "codex": true, "nanaoki": true, "tmp": true, "home": true, "users": true,
-	"projects": true, "work": true, "src": true, "web": true, "app": true, "api": true, "cli": true, "scratch": true}
+// Words that are not private even when a project has this name. Folders such as "remote", "runs" or "can" are
+// projects too, and replacing them in text gives "project-bz't". The field that names the project still gets its alias.
+var reserved = func() map[string]bool {
+	m := map[string]bool{}
+	for _, w := range strings.Fields(`claude codex nanaoki tmp temp home users projects work src web app apps api cli
+		scratch desktop documents downloads applications can run runs remote merged merge exact set sets test tests
+		timeline worktree worktrees site sites game games pdf ocr data docs main master build dist public private config
+		scripts tools server client local origin branch release assets content notes lib packages backend frontend
+		admin dashboard design research eval cache logs output input files images invoices witness`) {
+		m[w] = true
+	}
+	return m
+}()
 
 func letters(n int) string {
 	s := ""

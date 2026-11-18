@@ -22,6 +22,10 @@ func TestAnon(t *testing.T) {
 	if lesson != "Wrap hrefs/goto with resolve() from $app/paths. Fix seen: `bunx eslint <path>` and `ls <path>`." {
 		t.Errorf("lesson = %q", lesson)
 	}
+	w := New([]string{"can", "remote", "harborline"})
+	if got := w.Text("it can't reach the remote of harborline"); got != "it can't reach the remote of project-a" {
+		t.Errorf("common words = %q", got)
+	}
 	if a.Session("01a0a0d8-d1c3") != "01a0a0" {
 		t.Error("session not shortened")
 	}
